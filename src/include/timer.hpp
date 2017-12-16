@@ -18,122 +18,74 @@
 
 #pragma once
 
-#include <cassert>
-#include <mutex>
 #include <chrono>
-#include <set>
-#include <condition_variable>
-#include <atomic>
+#include <list>
 #include <memory>
-
-// TODO: add 'timer* m_parent' to timer::node; rename timer::node to timer::internals?
+#include <functional>
 
 namespace jessilib {
+
+/** forward delcarations */
+namespace impl {
+	class timer_manager;
+} // namespace impl
 
 /** timer */
 
 class timer {
 public:
-	class node;
-
 	// Types
-	using callback_t = std::function<void(node&)>; /** Function type called by the timer */
+	using function_t = std::function<void(timer&)>; /** Function type called by the timer */
 	using time_point_t = std::chrono::steady_clock::time_point; /** Type representing the point in time at which a timer will be called */
 	using duration_t = std::chrono::steady_clock::duration;
+	using iterations_t = size_t;
 
-	// Static functions
-	static void set(duration_t period, callback_t callback);
-	static void set(duration_t period, size_t iterations, callback_t callback);
+	enum class state {
+		active, // this timer is still active
+		processing, // this timer is processing right now
+		null // this timer is inactive
+	};
 
 	// Constructors
-	timer(duration_t period, callback_t callback);
-	timer(duration_t period, size_t iterations, callback_t callback);
+	timer();
+	timer(timer&& in_timer);
+	timer(duration_t in_period, function_t in_callback);
+	timer(duration_t in_period, iterations_t in_iterations, function_t in_callback);
 
-	// Explicitly deleted constructors
-	timer() = delete;
+	// Move operator
+	timer& operator=(timer&& in_timer);
+
+	// Explicitly deleted copy constructor and assignment operator
 	timer(const timer&) = delete;
-	timer(timer&& in_timer) = delete;
+	timer& operator=(const timer&) = delete;
 
 	// Destructor
 	~timer();
 
-	// Functions
+	// Accessors
 	time_point_t next() const;
 	duration_t period() const;
-	callback_t function() const;
-	void cancel();
-	bool active() const;
+	function_t function() const;
+	bool null() const;
 
-private:
-	// Weak pointer to referenced timer
-	std::weak_ptr<node> m_timer;
-
-	// Timer manager
-	class manager;
-	static manager s_manager;
-
-	// Helper
-	static callback_t callback_with_iterations(size_t iterations, callback_t callback);
-}; // timer
-
-/** timer::node */
-
-class timer::node : public std::enable_shared_from_this<node> {
-public:
-	time_point_t next() const;
-	duration_t period() const;
-	callback_t function() const;
+	// Mutators
+	void detach();
 	void cancel();
 
 private:
-	// Internal constructor
-	node(duration_t period, callback_t callback);
-
-	// Explicitly deleted constructors
-	node() = delete;
-	node(const node&) = delete;
-	node(node&& in_timer) = delete;
+	// possible states: null, active, processing, cancelled (still processing)
 
 	// Internal helpers
 	time_point_t calc_next();
 
 	// Members
 	duration_t m_period;
-	callback_t m_callback;
+	function_t m_callback;
 	time_point_t m_next;
+	std::list<timer>::iterator m_self;
 
 	// Friends
-	friend class timer;
-}; // class timer::node
+	friend impl::timer_manager;
+}; // class timer
 
-
-/** timer::manager */
-
-class timer::manager {
-	// Destructor
-	~manager();
-
-	struct timer_sort {
-		bool operator()(const std::shared_ptr<node>& lhs, const std::shared_ptr<node>& rhs) const {
-			return lhs->next() < rhs->next();
-		}
-	};
-
-	// Loop
-	void loop();
-
-	// Members
-	std::multiset<std::shared_ptr<node>, timer_sort> m_timers;
-	std::mutex m_mutex;
-	std::condition_variable m_cvar;
-	std::atomic<node*> m_active{ nullptr };
-	std::atomic<bool> m_thread_active{ true };
-	std::thread m_thread{ [this]() {
-		loop();
-	}};
-
-	// Friends
-	friend class timer;
-}; // class timer::manager
-
-}; // namespace jessilib
+} // namespace jessilib
