@@ -17,7 +17,7 @@
  */
 
 #include <future>
-#include "gtest/gtest.h"
+#include "test.hpp"
 #include "timer.hpp"
 
 using namespace jessilib;
@@ -25,7 +25,7 @@ using namespace std::literals;
 
 constexpr size_t total_iterations{ 4 };
 constexpr std::chrono::steady_clock::duration period = 1ms;
-constexpr std::chrono::steady_clock::duration timeout = 1s;
+constexpr std::chrono::steady_clock::duration timeout = period * total_iterations * 2 + 1s;
 
 TEST(TimerTest, scoped) {
 	size_t iterations{ 0 };

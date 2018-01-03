@@ -67,6 +67,8 @@ public:
 	duration_t period() const;
 	function_t function() const;
 	bool null() const;
+	bool current() const;
+	bool detached() const;
 
 	// Mutators
 	void detach();

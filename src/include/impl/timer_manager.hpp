@@ -48,8 +48,8 @@ class timer_manager {
     void loop();
 
 	// helpers
-	bool is_current(timer& in_timer);
-	bool is_detached(timer& in_timer);
+	bool is_current(const timer& in_timer);
+	bool is_detached(const timer& in_timer);
 
     // Members
     std::list<timer> m_detached_timers;

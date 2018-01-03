@@ -45,7 +45,7 @@ void timer_manager::loop() {
 				// Set active
 				timer* target = *itr;
 				m_current_timer = target;
-				bool detached = is_detached(*target);
+				bool detached = target->detached();
 
 				// Execute timer
 				target->m_callback(*target);
@@ -78,15 +78,6 @@ void timer_manager::loop() {
 			m_cvar.wait(lock);
 		}
 	}
-}
-
-bool timer_manager::is_current(timer& in_timer) {
-	return m_current_timer == &in_timer && m_thread.get_id() == std::this_thread::get_id();
-}
-
-bool timer_manager::is_detached(timer& in_timer) {
-	std::lock_guard<std::mutex> lock(m_detached_timers_mutex);
-	return in_timer.m_self != m_detached_timers.end();
 }
 
 } // namespace impl

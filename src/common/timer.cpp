@@ -70,6 +70,8 @@ timer::timer(duration_t in_period, function_t in_callback)
 	m_next{ calc_next() },
 	m_callback{ in_callback },
 	m_self{ impl::timer_manager::instance().m_detached_timers.end() } {
+	// PROBLEM: timer may be executing while moving data????
+
 	// Assertion checks
 	assert(m_callback != nullptr);
 	assert(m_period.count() != 0);
@@ -88,6 +90,15 @@ timer::timer(duration_t in_period, function_t in_callback)
 timer::timer(duration_t in_period, iterations_t in_iterations, function_t in_callback)
 	: timer{ in_period, callback_with_iterations(in_iterations, in_callback) } {
 	// Empty ctor body
+}
+
+timer& timer::operator=(timer&& in_timer) {
+	impl::timer_manager& manager = impl::timer_manager::instance();
+
+	m_period = in_timer.m_period;
+	m_next = in_timer.m_next;
+	m_callback = std::move(in_timer.m_callback);
+	m_self = in_timer.m_self;
 }
 
 timer::~timer() {
@@ -113,11 +124,24 @@ bool timer::null() const {
 	return m_callback == nullptr;
 }
 
+bool timer::current() const {
+	impl::timer_manager& manager = impl::timer_manager::instance();
+
+	return manager.m_current_timer == this && manager.m_thread.get_id() == std::this_thread::get_id();
+}
+
+bool timer::detached() const {
+	impl::timer_manager& manager = impl::timer_manager::instance();
+
+	std::lock_guard<std::mutex> lock(manager.m_detached_timers_mutex);
+	return m_self != manager.m_detached_timers.end();
+}
+
 void timer::detach() {
 	impl::timer_manager& manager = impl::timer_manager::instance();
 
-	assert(!manager.is_current(*this)); // you cannot detach a timer from within itself, because that would destroy the callback you're currently executing
-	assert(!manager.is_detached(*this)); // you cannot detach a timer that is already detached
+	assert(!current()); // you cannot detach a timer from within itself, because that would destroy the callback you're currently executing
+	assert(!detached()); // you cannot detach a timer that is already detached
 	std::lock_guard<std::mutex> lock(manager.m_detached_timers_mutex);
 	manager.m_detached_timers.emplace_back(std::move(*this));
 	--manager.m_detached_timers.back().m_self; // Is this a race condition?
@@ -126,7 +150,7 @@ void timer::detach() {
 void timer::cancel() {
 	impl::timer_manager& manager = impl::timer_manager::instance();
 
-	if (manager.is_current(*this)) {
+	if (current()) {
 		manager.m_active_timers.erase(this);
 		return;
 	}
