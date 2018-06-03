@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2017 Jessica James.
+ * Copyright (C) 2017-2018 Jessica James.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -25,6 +25,8 @@
 #include <atomic>
 #include <thread>
 #include "../timer.hpp"
+#include "../thread_pool.hpp"
+#include "timer_context.hpp"
 
 namespace jessilib {
 namespace impl {
@@ -39,24 +41,30 @@ class timer_manager {
     ~timer_manager();
 
     struct timer_sort {
-        bool operator()(const timer* lhs, const timer* rhs) const {
+        inline bool operator()(const timer_context* lhs, const timer_context* rhs) const {
             return lhs->next() < rhs->next();
         }
+    };
+
+    class worker_thread {
+    public:
+    	void operator()();
     };
 
     // Loop
     void loop();
 
-	// helpers
-	bool is_current(const timer& in_timer);
-	bool is_detached(const timer& in_timer);
+    // Attempt to execute timer
+	//bool try_fire(timer* in_timer);
+	static timer& thread_callback_timer();
 
     // Members
-    std::list<timer> m_detached_timers;
-    std::multiset<timer*, timer_sort> m_active_timers;
+	thread_pool m_pool{ thread_pool::default_threads() * 2 };
+    std::list<std::shared_ptr<timer_context>> m_detached_timers;
+    std::multiset<timer_context*, timer_sort> m_active_timers; // timer? weak_ptr<timer_context>?
     std::mutex m_mutex, m_detached_timers_mutex;
     std::condition_variable m_cvar;
-    std::atomic<timer*> m_current_timer{nullptr};
+    bool is_timeout{ true };
     std::atomic<bool> m_thread_active{true};
     std::thread m_thread{[this]() {
         loop();
@@ -64,6 +72,7 @@ class timer_manager {
 
     // Friends
     friend timer;
+    friend timer_context;
 }; // class timer_manager
 
 } // namespace impl

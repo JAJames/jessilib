@@ -31,39 +31,41 @@ TEST(ThreadPoolTest, initialDefault) {
 
 	EXPECT_EQ(pool.threads(), std::thread::hardware_concurrency());
 	std::this_thread::sleep_for(10ms);
-	EXPECT_EQ(pool.active(), 0);
+	EXPECT_EQ(pool.active(), 0U);
 
 	pool.join();
 
-	EXPECT_EQ(pool.active(), 0);
-	EXPECT_EQ(pool.threads(), 0);
+	EXPECT_EQ(pool.active(), 0U);
+	EXPECT_EQ(pool.threads(), 0U);
 }
 
 TEST(ThreadPoolTest, initialSizeDefined) {
 	thread_pool pool{ 7 };
 
-	EXPECT_EQ(pool.threads(), 7);
+	EXPECT_EQ(pool.threads(), 7U);
 	std::this_thread::sleep_for(10ms);
-	EXPECT_EQ(pool.active(), 0);
+	EXPECT_EQ(pool.active(), 0U);
 
 	pool.join();
 
-	EXPECT_EQ(pool.active(), 0);
-	EXPECT_EQ(pool.threads(), 0);
+	EXPECT_EQ(pool.active(), 0U);
+	EXPECT_EQ(pool.threads(), 0U);
 }
 
 TEST(ThreadPoolTest, push) {
-	std::atomic<size_t> iterations{ 0 };
-	thread_pool pool;
-
 	repeat (total_iterations) {
-		pool.push([&iterations, &pool]() {
-			++iterations;
-		});
-	}
+		std::atomic<size_t> iterations{0};
+		thread_pool pool;
 
-	pool.join();
-	EXPECT_EQ(iterations, total_iterations);
+		repeat (total_iterations) {
+			pool.push([&iterations, &pool]() {
+				++iterations;
+			});
+		}
+
+		pool.join();
+		EXPECT_EQ(iterations, total_iterations);
+	}
 }
 
 TEST(ThreadPoolTest, deadlockSingleThread) {
@@ -75,8 +77,8 @@ TEST(ThreadPoolTest, deadlockSingleThread) {
 			++iterations;
 
 			// Neither of the below should cause a deadlock
-			EXPECT_EQ(pool.threads(), 1);
-			EXPECT_EQ(pool.active(), 1);
+			EXPECT_EQ(pool.threads(), 1U);
+			EXPECT_EQ(pool.active(), 1U);
 		});
 	}
 

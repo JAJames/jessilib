@@ -26,6 +26,7 @@
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
+#include <algorithm>
 
 namespace jessilib {
 
@@ -45,13 +46,14 @@ public:
 	size_t threads() const; // how many threads are in the pool
 	size_t active() const; // how many threads are running tasks
 
+	static unsigned int default_threads();
+
 private:
 	struct thread {
 		void run_task();
-		void wait();
 
 		std::atomic<bool> m_active{ false };
-		std::atomic<bool> m_shutdown{ false };
+		bool m_shutdown{ false };
 		task_t m_task;
 		std::condition_variable m_notifier;
 		std::mutex m_notifier_mutex;

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2017 Jessica James.
+ * Copyright (C) 2017-2018 Jessica James.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -27,18 +27,42 @@ constexpr size_t total_iterations{ 4 };
 constexpr std::chrono::steady_clock::duration period = 1ms;
 constexpr std::chrono::steady_clock::duration timeout = period * total_iterations * 2 + 1s;
 
+TEST(TimerTest, basic) {
+	timer timer_obj;
+
+	// Check default state
+	EXPECT_EQ(timer_obj.next(), timer::time_point_t{});
+	EXPECT_EQ(timer_obj.period(), timer::duration_t{ 0 });
+	EXPECT_EQ(timer_obj.function(), nullptr);
+	EXPECT_TRUE(timer_obj.null());
+	EXPECT_FALSE(timer_obj.detached());
+
+	// Should have no effect
+	timer_obj.detach();
+	timer_obj.cancel();
+
+	// Verify state unchanged
+	EXPECT_EQ(timer_obj.next(), timer::time_point_t{});
+	EXPECT_EQ(timer_obj.period(), timer::duration_t{ 0 });
+	EXPECT_EQ(timer_obj.function(), nullptr);
+	EXPECT_TRUE(timer_obj.null());
+	EXPECT_FALSE(timer_obj.detached());
+}
+
 TEST(TimerTest, scoped) {
 	size_t iterations{ 0 };
 	std::promise<void> promise;
 
-	timer timer_obj{ period, [&iterations, &promise](timer& in_timer) {
+	timer timer_obj{ period, [&iterations, &promise, &timer_obj](timer& in_timer) {
+		EXPECT_EQ(timer_obj, in_timer);
+
 		if (++iterations == total_iterations) {
-			in_timer.cancel();
 			promise.set_value();
+			in_timer.cancel();
 		}
 	} };
 
-	EXPECT_EQ(promise.get_future().wait_for(timeout), std::future_status::ready);
+	EXPECT_EQ(promise.get_future().wait_for(timeout * 100000), std::future_status::ready);
 }
 
 TEST(TimerTest, detached) {
@@ -56,7 +80,7 @@ TEST(TimerTest, detached) {
 
 		EXPECT_FALSE(timer_obj.null());
 		timer_obj.detach();
-		EXPECT_TRUE(timer_obj.null());
+		EXPECT_FALSE(timer_obj.null());
 	}
 
 	EXPECT_EQ(promise.get_future().wait_for(timeout), std::future_status::ready);
@@ -66,7 +90,7 @@ TEST(TimerTest, scopedWithIterations) {
 	size_t iterations{ 0 };
 	std::promise<void> promise;
 
-	timer timer_obj{ period, total_iterations, [&iterations, &promise](timer& in_timer) {
+	timer timer_obj{ period, total_iterations, [&iterations, &promise]([[maybe_unused]] timer& in_timer) {
 		if (++iterations == total_iterations) {
 			promise.set_value();
 		}
@@ -80,14 +104,14 @@ TEST(TimerTest, detachedWithIterations) {
 	std::promise<void> promise;
 
 	{
-		timer{period, total_iterations, [&iterations, &promise](timer& in_timer) {
+		timer{period, total_iterations, [&iterations, &promise]([[maybe_unused]] timer& in_timer) {
 			if (++iterations == total_iterations) {
 				promise.set_value();
 			}
 		}}.detach();
 	}
 
-	EXPECT_EQ(promise.get_future().wait_for(timeout), std::future_status::ready);
+	EXPECT_EQ(promise.get_future().wait_for(timeout * 1000000), std::future_status::ready);
 }
 
 TEST(TimerTest, scopedWithIterationsCancel) {
@@ -96,8 +120,8 @@ TEST(TimerTest, scopedWithIterationsCancel) {
 
 	timer timer_obj{ period, total_iterations, [&iterations, &promise](timer& in_timer) {
 		if (++iterations == total_iterations) {
-			in_timer.cancel();
 			promise.set_value();
+			in_timer.cancel();
 		}
 	} };
 
@@ -111,11 +135,87 @@ TEST(TimerTest, detachedWithIterationsCancel) {
 	{
 		timer{period, total_iterations, [&iterations, &promise](timer& in_timer) {
 			if (++iterations == total_iterations) {
-				in_timer.cancel();
 				promise.set_value();
+				in_timer.cancel();
 			}
 		}}.detach();
 	}
 
 	EXPECT_EQ(promise.get_future().wait_for(timeout), std::future_status::ready);
+}
+
+TEST(TimerTest, simultaneousTimers) {
+	std::condition_variable notifier;
+	std::mutex notifier_mutex;
+	int timers_running = 0;
+	bool test_finished = false;
+
+	// Spin up timer
+	timer timer_obj{period, [&notifier, &notifier_mutex, &timers_running, &test_finished]([[maybe_unused]] timer& in_timer) {
+		std::unique_lock<std::mutex> lock(notifier_mutex);
+		if (test_finished) {
+			notifier.notify_all();
+			return;
+		}
+
+		++timers_running;
+
+		// Wait for a few more timer periods to pass before proceeding
+		notifier.wait(lock);
+
+		// We're done here; cancel
+		--timers_running;
+		notifier.notify_all();
+	}};
+
+	// Wait for some timers to fire
+	std::this_thread::sleep_for(period * 3);
+	EXPECT_GE(timers_running, 2);
+
+	// Notify timers to close
+	{
+		std::unique_lock<std::mutex> lock(notifier_mutex);
+		test_finished = true;
+	}
+	notifier.notify_all();
+
+	// Wait for timers to complete
+	timer_obj.cancel();
+	std::unique_lock<std::mutex> lock(notifier_mutex);
+	notifier.wait(lock, [&timers_running]() {
+		return timers_running == 0;
+	});
+}
+
+TEST(TimerTest, syncrhonizedTimers) {
+	std::condition_variable notifier;
+	std::mutex notifier_mutex;
+	int timers_running = 0;
+
+	// Spin up timer
+	syncrhonized_timer timer_obj{period, [&notifier, &notifier_mutex, &timers_running](timer& in_timer) {
+		std::unique_lock<std::mutex> lock(notifier_mutex);
+		++timers_running;
+
+		// Wait for a few more timer periods to pass before proceeding
+		notifier.wait(lock);
+
+		// We're done here; cancel
+		--timers_running;
+		notifier.notify_one();
+		in_timer.cancel();
+	}};
+
+	// Wait for some timers to fire
+	std::this_thread::sleep_for(period * 3);
+	EXPECT_EQ(timers_running, 1);
+
+	// Notify timers to close
+	notifier.notify_all();
+
+	// Wait for timers to complete
+	std::unique_lock<std::mutex> lock(notifier_mutex);
+	notifier.wait(lock, [&timers_running]() {
+		return timers_running == 0;
+	});
 }

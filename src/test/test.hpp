@@ -22,4 +22,5 @@
 #include "gtest/gtest.h"
 
 // Helper macros
-#define repeat( ITERATIONS ) for (size_t iteration__ = 0; iteration__ != (ITERATIONS); ++iteration__)
+#define UNIQUE_LABEL( LABEL ) LABEL ## __LINE__ ## __
+#define repeat( ITERATIONS ) for (size_t UNIQUE_LABEL(iteration_) = 0; UNIQUE_LABEL(iteration_) != (ITERATIONS); ++ UNIQUE_LABEL(iteration_) )

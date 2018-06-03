@@ -18,13 +18,20 @@
 
 #include "thread_pool.hpp"
 #include <cassert>
+#include <algorithm>
 
 namespace jessilib {
 
 // thread_pool
 
+unsigned int thread_pool::default_threads() {
+	static constexpr unsigned int MIN_THREADS{ 1 };
+	static const unsigned int DEFAULT_THREADS{ std::max(std::thread::hardware_concurrency(), MIN_THREADS) };
+	return DEFAULT_THREADS;
+};
+
 thread_pool::thread_pool()
-	: thread_pool{ std::thread::hardware_concurrency() } {
+	: thread_pool{ default_threads() } {
 }
 
 thread_pool::thread_pool(size_t in_threads)
@@ -32,40 +39,38 @@ thread_pool::thread_pool(size_t in_threads)
 	assert(in_threads != 0);
 
 	while (in_threads != 0) {
-		thread& self = m_threads[--in_threads];
-		self.m_thread = std::thread([this, &self]() {
+		thread& worker = m_threads[--in_threads];
+		worker.m_thread = std::thread([this, &worker]() {
 			while (true) {
 				// Run next pending task, if there is any
-				self.m_task = pop_task();
-				if (self.m_task != nullptr) {
-					self.run_task();
+				worker.m_task = pop_task();
+				if (worker.m_task != nullptr) {
+					worker.run_task();
 					continue;
 				}
 
-				if (self.m_shutdown) {
-					break;
-				}
-
-				// Push inactive thread
 				{
-					std::lock_guard<std::mutex> guard(m_inactive_threads_mutex);
-					m_inactive_threads.push(&self);
-				}
+					// Check if we're shutting down
+					std::unique_lock<std::mutex> notifier_guard(worker.m_notifier_mutex);
+					if (worker.m_shutdown) {
+						break;
+					}
 
-				// Wait for notification
-				self.wait();
+					// Push inactive thread
+					{
+						std::lock_guard<std::mutex> inactive_threads_guard(m_inactive_threads_mutex);
+						m_inactive_threads.push(&worker);
+					}
+
+					// Wait for notification
+					worker.m_notifier.wait(notifier_guard);
+				}
 
 				// Run task
-				self.run_task();
+				worker.run_task();
 			}
 		});
 	}
-}
-
-template<typename T>
-T lock_helper(T&& in_obj, std::mutex& in_mutex) {
-	std::lock_guard<std::mutex> guard(in_mutex);
-	return std::move(in_obj);
 }
 
 thread_pool::~thread_pool() {
@@ -88,14 +93,21 @@ void thread_pool::push(task_t in_task) {
 void thread_pool::join() {
 	std::lock_guard<std::mutex> guard(m_threads_mutex);
 
-	// Join threads
-	for (thread& thread : m_threads) {
+	// Shutdown threads
+	for (thread& worker : m_threads) {
 		// Mark thread for shutdown
-		thread.m_shutdown = true;
-		thread.m_notifier.notify_one();
+		{
+			std::unique_lock<std::mutex> guard(worker.m_notifier_mutex);
+			worker.m_shutdown = true;
+		}
 
-		// Wait for thread to complete
-		thread.m_thread.join();
+		// Notify thread to shutdown
+		worker.m_notifier.notify_one();
+	}
+
+	// Join threads
+	for (thread& worker : m_threads) {
+		worker.m_thread.join();
 	}
 
 	// Cleanup threads
@@ -149,11 +161,6 @@ void thread_pool::thread::run_task() {
 		m_task = nullptr;
 		m_active = false;
 	}
-}
-
-void thread_pool::thread::wait() {
-	std::unique_lock<std::mutex> guard(m_notifier_mutex);
-	m_notifier.wait(guard);
 }
 
 } // namespace jessilib
