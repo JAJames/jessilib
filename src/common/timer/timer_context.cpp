@@ -65,7 +65,7 @@ void timer_context::detach() {
 		impl::timer_manager& manager = impl::timer_manager::instance();
 		std::list<std::shared_ptr<timer_context>>& detached_timers = manager.m_detached_timers;
 
-		jessilib_assert(!detached()); // you cannot detach a timer that is already detached
+		jessilib_debug_assert(!detached()); // you cannot detach a timer that is already detached
 		std::lock_guard<std::mutex> lock(manager.m_detached_timers_mutex);
 		// We need to attach this new shared_ptr to the callback
 		m_self = detached_timers.emplace(detached_timers.end(), shared_from_this());

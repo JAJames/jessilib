@@ -84,8 +84,8 @@ timer::timer(duration_t in_period, function_t in_callback)
 	: m_context{ new impl::timer_context{ in_period, std::move(in_callback) } } {
 	// Add timer_context to timer_manager
 	// Note: this logic must be here (rather than timer_context) to ensure timer_context is wrapped in a shared_ptr
-	if jessilib_assert(in_period.count() != 0)
-	if jessilib_assert(!m_context->null()) {
+	if (jessilib_debug_assert(in_period.count() != 0)
+		&& jessilib_debug_assert(!m_context->null())) {
 		// Add timer
 		impl::timer_manager& manager = impl::timer_manager::instance();
 		{

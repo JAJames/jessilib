@@ -91,7 +91,6 @@ public:
 	syncrhonized_timer& operator=(syncrhonized_timer&& in_timer) = default;
 };
 
-
 /** Useful when performing actions within a timer which may destroy the timer's callback */
 
 class cancel_token {
@@ -114,6 +113,5 @@ public:
 private:
 	impl::cancel_token_context* m_context;
 };
-
 
 } // namespace jessilib
