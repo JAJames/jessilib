@@ -53,19 +53,17 @@ TEST(ThreadPoolTest, initialSizeDefined) {
 }
 
 TEST(ThreadPoolTest, push) {
+	std::atomic<size_t> iterations{0};
+	thread_pool pool;
+
 	repeat (total_iterations) {
-		std::atomic<size_t> iterations{0};
-		thread_pool pool;
-
-		repeat (total_iterations) {
-			pool.push([&iterations, &pool]() {
-				++iterations;
-			});
-		}
-
-		pool.join();
-		EXPECT_EQ(iterations, total_iterations);
+		pool.push([&iterations, &pool]() {
+			++iterations;
+		});
 	}
+
+	pool.join();
+	EXPECT_EQ(iterations, total_iterations);
 }
 
 TEST(ThreadPoolTest, deadlockSingleThread) {
