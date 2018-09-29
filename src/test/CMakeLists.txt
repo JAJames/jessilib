@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.8)
 # Setup source files
 include_directories(../include)
 set(SOURCE_FILES
-        timer.cpp thread_pool.cpp util.cpp object.cpp)
+        timer.cpp thread_pool.cpp util.cpp object.cpp parser.cpp config.cpp)
 
 # Setup gtest
 add_subdirectory(googletest/googletest)

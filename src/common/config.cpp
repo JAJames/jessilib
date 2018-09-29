@@ -114,7 +114,7 @@ object config::read_object(const std::filesystem::path& in_filename, const std::
 	}
 
 	// Deserialize1
-	return deserialize_object(file, in_format);
+	return deserialize_object(file, get_format(in_filename, in_format));
 }
 
 void config::write_object(const object& in_object, const std::filesystem::path& in_filename, const std::string& in_format) {
@@ -126,10 +126,10 @@ void config::write_object(const object& in_object, const std::filesystem::path& 
 	}
 
 	// Deserialize1
-	return serialize_object(file, in_object, in_format);
+	return serialize_object(file, in_object, get_format(in_filename, in_format));
 }
 
-std::string get_format(const std::filesystem::path& in_filename, const std::string& in_format) {
+std::string config::get_format(const std::filesystem::path& in_filename, const std::string& in_format) {
 	if (!in_format.empty()) {
 		// Use specified format
 		return in_format;

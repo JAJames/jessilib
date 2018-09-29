@@ -24,3 +24,5 @@
 // Helper macros
 #define UNIQUE_LABEL( LABEL ) LABEL ## __LINE__ ## __
 #define repeat( ITERATIONS ) for (size_t UNIQUE_LABEL(iteration_) = 0; UNIQUE_LABEL(iteration_) != (ITERATIONS); ++ UNIQUE_LABEL(iteration_) )
+
+using base_test = ::testing::Test;
