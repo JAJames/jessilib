@@ -34,7 +34,6 @@
 # Build directories
 .idea
 .vs/
-build/
 
 cmake-build-*
 [Dd]ebug/
