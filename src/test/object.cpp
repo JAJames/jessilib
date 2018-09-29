@@ -23,14 +23,6 @@
 using namespace jessilib;
 using namespace std::literals;
 
-void object_compilation_test() {
-	object config {};
-
-	// Map accessor
-	config["bob"]["builder"].get<std::string>(""s);
-	config["bob"]["builder"] = "whatever";
-}
-
 using signed_char_t = signed char;
 using unsigned_char_t = unsigned char;
 using long_long_t = long long;
