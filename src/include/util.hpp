@@ -19,14 +19,7 @@
 #pragma once
 
 #include <cstddef>
-#include <type_traits>
-#include <vector>
-#include <list>
-#include <forward_list>
-#include <set>
-#include <unordered_set>
-#include <map>
-#include <unordered_map>
+#include <charconv>
 
 /** Macros */
 
@@ -35,157 +28,65 @@
 
 namespace jessilib {
 
-/** is_vector */
+template<typename T>
+const char* parse_decimal_part(const char* in_str, const char* in_str_end, T& out_value) {
+	int denominator = 10;
+	while (in_str != in_str_end) {
+		switch (*in_str) {
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				if (out_value >= 0.0) {
+					out_value += (static_cast<T>(*in_str - '0') / denominator);
+				}
+				else {
+					out_value -= (static_cast<T>(*in_str - '0') / denominator);
+				}
+				denominator *= 10;
+				break;
+
+			default:
+				return in_str;
+		}
+
+		++in_str;
+	}
+
+	return in_str;
+}
 
 template<typename T>
-struct is_vector : std::false_type {};
+std::from_chars_result from_chars(const char* in_str, const char* in_str_end, T& out_value) {
+	// TODO: use std::from_chars when available for floating point types
+	if constexpr (std::is_floating_point<T>::value) {
+		// Read integer portion
+		long long integer_value{};
+		std::from_chars_result result{ std::from_chars(in_str, in_str_end, integer_value) };
+		out_value = integer_value;
 
-template<typename T>
-struct is_vector<std::vector<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
+		// Read decimal portion (if one exists)
+		if (result.ptr != in_str_end && *result.ptr == '.') {
+			++result.ptr;
+			result.ptr = parse_decimal_part(result.ptr, in_str_end, out_value);
+			result.ec = std::errc{};
+		}
 
-/** is_list */
+		// TODO: Read exponents
 
-template<typename T>
-struct is_list : std::false_type {};
+		return result;
+	}
+	else {
+		return std::from_chars(in_str, in_str_end, out_value);
+	}
+}
 
-template<typename T>
-struct is_list<std::list<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-/** is_forward_list */
-
-template<typename T>
-struct is_forward_list : std::false_type {};
-
-template<typename T>
-struct is_forward_list<std::forward_list<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-/** is_set */
-
-template<typename T>
-struct is_set : std::false_type {};
-
-template<typename T>
-struct is_set<std::set<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-/** is_multiset */
-
-template<typename T>
-struct is_multiset : std::false_type {};
-
-template<typename T>
-struct is_multiset<std::multiset<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-/** is_unordered_set */
-
-template<typename T>
-struct is_unordered_set : std::false_type {};
-
-template<typename T>
-struct is_unordered_set<std::unordered_set<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-/** is_unordered_set */
-
-template<typename T>
-struct is_unordered_multiset : std::false_type {};
-
-template<typename T>
-struct is_unordered_multiset<std::unordered_multiset<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-/** is_sequence_container */
-
-template<typename T>
-struct is_sequence_container : std::false_type {};
-
-template<typename T>
-struct is_sequence_container<std::vector<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-template<typename T>
-struct is_sequence_container<std::list<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-template<typename T>
-struct is_sequence_container<std::forward_list<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-template<typename T>
-struct is_sequence_container<std::set<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-template<typename T>
-struct is_sequence_container<std::multiset<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-template<typename T>
-struct is_sequence_container<std::unordered_set<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
-
-template<typename T>
-struct is_sequence_container<std::unordered_multiset<T>> {
-	using type = T;
-	static constexpr bool value{ true };
-	constexpr operator bool() const noexcept { return true; }
-	constexpr bool operator()() const noexcept { return true; }
-};
 
 /** Implementation details */
 

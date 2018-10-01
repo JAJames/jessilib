@@ -24,7 +24,7 @@
 #include <map>
 #include <variant>
 #include <utility>
-#include "util.hpp"
+#include "type_traits.hpp"
 
 namespace jessilib {
 
@@ -74,6 +74,18 @@ public:
 	struct is_backing<T, typename std::enable_if<std::is_same<T, map_t>::value>::type> {
 		static constexpr bool value = true;
 		using type = map_t;
+	};
+
+	/** type */
+
+	enum class type : size_t {
+		null = 0,
+		boolean,
+		integer,
+		decimal,
+		string, // TODO: consider separating into 'binary' (std::vector<std::byte>) and 'text' (std::string) types
+		array,
+		map
 	};
 
 	// Standard constructors
@@ -164,6 +176,10 @@ public:
 	bool has() const {
 		using backing_t = typename is_backing<T>::type;
 		return std::holds_alternative<backing_t>(m_value);
+	}
+
+	type type() const {
+		return static_cast<decltype(type::null)>(m_value.index());
 	}
 
 	/** arithmetic types (numbers, bool) */

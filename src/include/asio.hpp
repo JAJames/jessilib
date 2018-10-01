@@ -16,14 +16,12 @@
  * Written by Jessica James <jessica.aj@outlook.com>
  */
 
-#include "util.hpp"
-#include "test.hpp"
-#include "object.hpp"
+#pragma once
 
-using namespace jessilib;
-using namespace std::literals;
+#include <boost/asio.hpp>
 
-TEST(UtilTest, filename) {
-	constexpr const char* filename = JESSILIB_FILENAME;
-	EXPECT_STREQ(filename, "util.cpp");
-}
+namespace jessilib {
+
+namespace asio = boost::asio;
+
+} // namespace jessilib

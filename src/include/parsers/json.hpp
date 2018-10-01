@@ -16,14 +16,17 @@
  * Written by Jessica James <jessica.aj@outlook.com>
  */
 
-#include "util.hpp"
-#include "test.hpp"
-#include "object.hpp"
+#pragma once
 
-using namespace jessilib;
-using namespace std::literals;
+#include "parser.hpp"
 
-TEST(UtilTest, filename) {
-	constexpr const char* filename = JESSILIB_FILENAME;
-	EXPECT_STREQ(filename, "util.cpp");
-}
+namespace jessilib {
+
+class json_parser : public parser {
+public:
+	/** deserialize/serialize overrides */
+	virtual object deserialize(std::string_view in_data) override;
+	virtual std::string serialize(const object& in_object) override;
+};
+
+} // namespace jessilib
