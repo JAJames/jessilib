@@ -41,8 +41,7 @@ object::object(const std::string_view& in_str)
 /** Accessors */
 
 bool object::null() const {
-	// There's something funny about variants holding nullptr_t
-	return std::holds_alternative<nullptr_t>(m_value);
+	return std::holds_alternative<null_variant_t>(m_value);
 }
 
 size_t object::size() const {
@@ -95,7 +94,7 @@ object& object::operator[](const std::string& in_key) {
 	}
 
 	static thread_local object s_null_object;
-	s_null_object.m_value.emplace<nullptr_t>();
+	s_null_object.m_value.emplace<null_variant_t>();
 	return s_null_object;
 }
 

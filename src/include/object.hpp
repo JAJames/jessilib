@@ -405,7 +405,7 @@ public:
 		return std::visit([this](auto&& value) -> size_t {
 			using T = typename std::decay<decltype(value)>::type;
 
-			if constexpr (std::is_same<T, nullptr_t>::value) {
+			if constexpr (std::is_same<T, null_variant_t>::value) {
 				return 0;
 			}
 			else if constexpr (std::is_same<T, array_t>::value) {
@@ -431,7 +431,8 @@ public:
 	}
 
 private:
-	std::variant<nullptr_t, bool, intmax_t, long double, std::string, array_t, map_t> m_value;
+	using null_variant_t = void*;
+	std::variant<null_variant_t, bool, intmax_t, long double, std::string, array_t, map_t> m_value;
 }; // object
 
 } // namespace jessilib
