@@ -89,6 +89,9 @@ app_parameters::app_parameters(int in_argc, const char** in_argv) {
 
 	// Flush any pending switch/value
 	flush_value();
+
+	// Populate m_switches_set from m_switches
+	m_switches_set = std::unordered_set<std::string_view>{ m_switches.begin(), m_switches.end() };
 }
 
 std::string_view app_parameters::path() const {
@@ -103,8 +106,8 @@ const std::vector<std::string_view>& app_parameters::switches() const {
 	return m_switches;
 }
 
-std::unordered_set<std::string_view> app_parameters::switches_set() const {
-	return { m_switches.begin(), m_switches.end() };
+const std::unordered_set<std::string_view>& app_parameters::switches_set() const {
+	return m_switches_set;
 }
 
 const std::unordered_map<std::string_view, std::string>& app_parameters::values() const {
@@ -131,6 +134,21 @@ object app_parameters::as_object() const {
 		{ "Switches", m_switches },
 		{ "Values", values_map }
 	};
+}
+
+bool app_parameters::hasSwitch(std::string_view in_switch) const {
+	return m_switches_set.find(in_switch) != m_switches_set.end();
+}
+
+std::string_view app_parameters::getValue(std::string_view in_key) const {
+	auto result = m_values.find(in_key);
+
+	// Safety check
+	if (result == m_values.end()) {
+		return {};
+	}
+
+	return result->second;
 }
 
 } // namespace jessilib

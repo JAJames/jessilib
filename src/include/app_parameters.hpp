@@ -28,9 +28,12 @@ public:
 	std::string_view path() const;
 	const std::vector<std::string_view>& arguments() const;
 	const std::vector<std::string_view>& switches() const;
-	std::unordered_set<std::string_view> switches_set() const;
+	const std::unordered_set<std::string_view>& switches_set() const;
 	const std::unordered_map<std::string_view, std::string>& values() const;
 	jessilib::object as_object() const;
+
+	bool hasSwitch(std::string_view in_switch) const;
+	std::string_view getValue(std::string_view in_key) const;
 
 	operator jessilib::object() const { return as_object(); }
 
@@ -38,6 +41,7 @@ private:
 	std::string_view m_path;
 	std::vector<std::string_view> m_args;
 	std::vector<std::string_view> m_switches;
+	std::unordered_set<std::string_view> m_switches_set;
 	std::unordered_map<std::string_view, std::string> m_values;
 };
 
