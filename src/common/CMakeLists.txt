@@ -1,8 +1,6 @@
-cmake_minimum_required(VERSION 3.8)
-
 # Setup source files
 set(SOURCE_FILES
-        timer/timer.cpp timer/timer_manager.cpp thread_pool.cpp timer/timer_context.cpp timer/cancel_token.cpp timer/synchronized_timer.cpp object.cpp parser/parser.cpp parser/parser_manager.cpp config.cpp serialize.cpp parsers/json.cpp unicode.cpp)
+        timer/timer.cpp timer/timer_manager.cpp thread_pool.cpp timer/timer_context.cpp timer/cancel_token.cpp timer/synchronized_timer.cpp object.cpp parser/parser.cpp parser/parser_manager.cpp config.cpp serialize.cpp parsers/json.cpp unicode.cpp app_parameters.cpp)
 
 # Setup library build target
 add_library(jessilib ${SOURCE_FILES})
@@ -13,3 +11,8 @@ target_include_directories(jessilib PRIVATE ../include/impl/asio/include)
 
 # Setup additionally needed libs
 target_link_libraries(jessilib ${JESSILIB_ADDITOINAL_LIBS})
+
+# Setup fmt::fmt; include directories are included as SYSTEM to suppress warnings (which would be treated as errors)
+get_target_property(fmt_include_dirs fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(jessilib SYSTEM PUBLIC ${fmt_include_dirs})
+target_link_libraries(jessilib fmt::fmt)
