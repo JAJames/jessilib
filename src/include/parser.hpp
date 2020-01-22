@@ -26,6 +26,8 @@ namespace jessilib {
 
 class parser {
 public:
+	virtual ~parser() = default;
+
 	/** Interface methods */
 
 	/**

@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.8)
-
 # Setup source files
 set(SOURCE_FILES
         timer.cpp thread_pool.cpp util.cpp object.cpp parser.cpp config.cpp parsers/json.cpp unicode.cpp)

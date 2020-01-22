@@ -402,7 +402,7 @@ public:
 	}
 
 	size_t hash() const {
-		return std::visit([this](auto&& value) -> size_t {
+		return std::visit([](auto&& value) -> size_t {
 			using T = typename std::decay<decltype(value)>::type;
 
 			if constexpr (std::is_same<T, null_variant_t>::value) {

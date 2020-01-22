@@ -57,7 +57,7 @@ TEST(ThreadPoolTest, push) {
 	thread_pool pool;
 
 	repeat (total_iterations) {
-		pool.push([&iterations, &pool]() {
+		pool.push([&iterations]() {
 			++iterations;
 		});
 	}
