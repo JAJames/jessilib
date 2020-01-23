@@ -4,3 +4,6 @@
 [submodule "asio"]
 	path = src/include/impl/asio
 	url = https://github.com/boostorg/asio.git
+[submodule "src/include/fmt"]
+	path = src/external/fmt
+	url = https://github.com/fmtlib/fmt.git

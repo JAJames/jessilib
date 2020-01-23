@@ -87,6 +87,10 @@ std::from_chars_result from_chars(const char* in_str, const char* in_str_end, T&
 	}
 }
 
+template<typename T>
+constexpr T square(T in_value) {
+	return in_value * in_value;
+}
 
 /** Implementation details */
 
