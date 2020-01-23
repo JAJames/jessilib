@@ -122,17 +122,11 @@ object app_parameters::as_object() const {
 		return object{};
 	}
 
-	// Transform m_values into appropriate map type; TODO: add helper to object for this
-	std::map<std::string, object> values_map;
-	for (auto& value : m_values) {
-		values_map.emplace(value.first, value.second);
-	}
-
 	return std::map<std::string, object>{
 		{ "Path", m_path },
 		{ "Args", m_args },
 		{ "Switches", m_switches },
-		{ "Values", values_map }
+		{ "Values", m_values }
 	};
 }
 

@@ -30,6 +30,13 @@
 
 namespace jessilib {
 
+/** remove_cvref (can be replaced with C++20) */
+
+template<class T>
+struct remove_cvref {
+	typedef std::remove_cv_t<std::remove_reference_t<T>> type;
+};
+
 /** is_vector */
 
 template<typename T>
@@ -108,7 +115,7 @@ struct is_unordered_set<std::unordered_set<T>> {
 	constexpr bool operator()() const noexcept { return true; }
 };
 
-/** is_unordered_set */
+/** is_unordered_multiset */
 
 template<typename T>
 struct is_unordered_multiset : std::false_type {};
@@ -116,6 +123,57 @@ struct is_unordered_multiset : std::false_type {};
 template<typename T>
 struct is_unordered_multiset<std::unordered_multiset<T>> {
 	using type = T;
+	static constexpr bool value{ true };
+	constexpr operator bool() const noexcept { return true; }
+	constexpr bool operator()() const noexcept { return true; }
+};
+
+/** is_map */
+
+template<typename T>
+struct is_map : std::false_type {};
+
+template<typename KeyT, typename ValueT>
+struct is_map<std::map<KeyT, ValueT>> {
+	using key_type = KeyT;
+	using value_type = ValueT;
+	static constexpr bool value{ true };
+	constexpr operator bool() const noexcept { return true; }
+	constexpr bool operator()() const noexcept { return true; }
+};
+
+/** is_unordered_map */
+
+template<typename T>
+struct is_unordered_map : std::false_type {};
+
+template<typename KeyT, typename ValueT>
+struct is_unordered_map<std::unordered_map<KeyT, ValueT>> {
+	using key_type = KeyT;
+	using value_type = ValueT;
+	static constexpr bool value{ true };
+	constexpr operator bool() const noexcept { return true; }
+	constexpr bool operator()() const noexcept { return true; }
+};
+
+/** is_associative_container */
+
+template<typename T>
+struct is_associative_container : std::false_type {};
+
+template<typename KeyT, typename ValueT>
+struct is_associative_container<std::map<KeyT, ValueT>> {
+	using key_type = KeyT;
+	using value_type = ValueT;
+	static constexpr bool value{ true };
+	constexpr operator bool() const noexcept { return true; }
+	constexpr bool operator()() const noexcept { return true; }
+};
+
+template<typename KeyT, typename ValueT>
+struct is_associative_container<std::unordered_map<KeyT, ValueT>> {
+	using key_type = KeyT;
+	using value_type = ValueT;
 	static constexpr bool value{ true };
 	constexpr operator bool() const noexcept { return true; }
 	constexpr bool operator()() const noexcept { return true; }

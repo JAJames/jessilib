@@ -71,8 +71,9 @@ public:
 	};
 
 	template<typename T>
-	struct is_backing<T, typename std::enable_if<std::is_same<T, map_t>::value>::type> {
-		static constexpr bool value = true;
+	struct is_backing<T, typename std::enable_if<is_associative_container<T>::value>::type> {
+		static constexpr bool value = std::is_same<typename is_associative_container<T>::key_type, std::string>::value
+			&& std::is_same<typename is_associative_container<T>::value_type, object>::value;
 		using type = map_t;
 	};
 
@@ -97,7 +98,8 @@ public:
 	// Value constructors
 	template<typename T,
 		typename std::enable_if<is_backing<typename std::decay<T>::type>::value
-		&& !is_sequence_container<typename std::decay<T>::type>::value>::type* = nullptr>
+		&& !is_sequence_container<typename std::decay<T>::type>::value
+		&& (!is_associative_container<typename std::decay<T>::type>::value || std::is_same<typename remove_cvref<T>::type, map_t>::value)>::type* = nullptr>
 	object(T&& in_value)
 		: m_value{ typename is_backing<typename std::decay<T>::type>::type{ std::forward<T>(in_value) } } {
 		// Empty ctor body
@@ -121,6 +123,30 @@ public:
 
 		for (const auto& item : in_value) {
 			array.emplace_back(bool{item});
+		}
+	}
+
+	// std::unordered_map<std::string, object>
+	template<typename T,
+		typename std::enable_if<is_unordered_map<typename std::decay<T>::type>::value
+			&& std::is_same<typename is_unordered_map<typename std::decay<T>::type>::key_type, std::string>::value
+			&& std::is_same<typename is_unordered_map<typename std::decay<T>::type>::value_type, object>::value>::type* = nullptr>
+	object(T&& in_value)
+		: m_value{ map_t{ in_value.begin(), in_value.end() } } {
+		// Empty ctor body
+	}
+
+	// Non-map_t associative containers (container<std::string, T>)
+	template<typename T,
+		typename std::enable_if<is_associative_container<typename remove_cvref<T>::type>::value
+			&& (std::is_convertible<typename is_associative_container<typename remove_cvref<T>::type>::key_type, std::string>::value
+			|| std::is_convertible<typename is_associative_container<typename remove_cvref<T>::type>::key_type, std::string_view>::value)
+			&& !std::is_same<typename is_associative_container<typename remove_cvref<T>::type>::value_type, object>::value>::type* = nullptr>
+	object(T&& in_value)
+		: m_value{ map_t{} } {
+		auto& map = std::get<map_t>(m_value);
+		for (auto& pair : in_value) {
+			map.emplace(pair.first, pair.second);
 		}
 	}
 
