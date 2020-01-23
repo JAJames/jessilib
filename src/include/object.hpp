@@ -72,8 +72,7 @@ public:
 
 	template<typename T>
 	struct is_backing<T, typename std::enable_if<is_associative_container<T>::value>::type> {
-		static constexpr bool value = std::is_same<typename is_associative_container<T>::key_type, std::string>::value
-			&& std::is_same<typename is_associative_container<T>::value_type, object>::value;
+		static constexpr bool value = std::is_same<typename is_associative_container<T>::key_type, std::string>::value;
 		using type = map_t;
 	};
 

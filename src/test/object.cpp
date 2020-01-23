@@ -148,6 +148,30 @@ TEST(ObjectTest, basic_has_unordered_set) {
 	EXPECT_FALSE(obj.has<std::unordered_set<object>>());
 }
 
+using map_str_str = std::map<std::string, std::string>;
+using map_str_strv = std::map<std::string, std::string_view>;
+using map_str_obj = std::map<std::string, object>;
+
+using unordered_map_str_str = std::unordered_map<std::string, std::string>;
+using unordered_map_str_strv = std::unordered_map<std::string, std::string_view>;
+using unordered_map_str_obj = std::unordered_map<std::string, object>;
+
+TEST(ObjectTest, basic_has_map) {
+	object obj;
+
+	EXPECT_FALSE(obj.has<map_str_str>());
+	EXPECT_FALSE(obj.has<map_str_strv>());
+	EXPECT_FALSE(obj.has<map_str_obj>());
+}
+
+TEST(ObjectTest, basic_has_unordered_map) {
+	object obj;
+
+	EXPECT_FALSE(obj.has<unordered_map_str_str>());
+	EXPECT_FALSE(obj.has<unordered_map_str_strv>());
+	EXPECT_FALSE(obj.has<unordered_map_str_obj>());
+}
+
 /** basic_get tests */
 
 TEST(ObjectTest, basic_get) {
@@ -301,7 +325,7 @@ TEST(ObjectTest, basic_get_unordered_multiset) {
 	{ object test_object__{ in_type {} }; \
 	EXPECT_TRUE(test_object__ .has< in_type >()); \
 	EXPECT_EQ(test_object__.get< in_type >(), in_type {} ); }
-	
+
 // asdf
 
 TEST(ObjectTest, basic_value_constructor) {
@@ -445,7 +469,7 @@ TEST(ObjectTest, basic_value_constructor_unordered_multiset) {
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_multiset<std::string>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_set<object>);
 }
-	
+
 /** basic_set */
 
 #define OBJECT_BASIC_SET_TEST(in_object, in_type) \
