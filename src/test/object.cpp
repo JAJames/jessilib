@@ -28,6 +28,20 @@ using unsigned_char_t = unsigned char;
 using long_long_t = long long;
 using long_double_t = long double;
 
+using map_str_str = std::map<std::string, std::string>;
+using map_str_strv = std::map<std::string, std::string_view>;
+using map_str_obj = std::map<std::string, object>;
+using map_strv_str = std::map<std::string_view, std::string>;
+using map_strv_strv = std::map<std::string_view, std::string_view>;
+using map_strv_obj = std::map<std::string_view, object>;
+
+using unordered_map_str_str = std::unordered_map<std::string, std::string>;
+using unordered_map_str_strv = std::unordered_map<std::string, std::string_view>;
+using unordered_map_str_obj = std::unordered_map<std::string, object>;
+using unordered_map_strv_str = std::unordered_map<std::string_view, std::string>;
+using unordered_map_strv_strv = std::unordered_map<std::string_view, std::string_view>;
+using unordered_map_strv_obj = std::unordered_map<std::string_view, object>;
+
 /** basic tests; these test function calls against null objects and heavily test for compilation errors */
 
 TEST(ObjectTest, basic) {
@@ -148,20 +162,15 @@ TEST(ObjectTest, basic_has_unordered_set) {
 	EXPECT_FALSE(obj.has<std::unordered_set<object>>());
 }
 
-using map_str_str = std::map<std::string, std::string>;
-using map_str_strv = std::map<std::string, std::string_view>;
-using map_str_obj = std::map<std::string, object>;
-
-using unordered_map_str_str = std::unordered_map<std::string, std::string>;
-using unordered_map_str_strv = std::unordered_map<std::string, std::string_view>;
-using unordered_map_str_obj = std::unordered_map<std::string, object>;
-
 TEST(ObjectTest, basic_has_map) {
 	object obj;
 
 	EXPECT_FALSE(obj.has<map_str_str>());
 	EXPECT_FALSE(obj.has<map_str_strv>());
 	EXPECT_FALSE(obj.has<map_str_obj>());
+	EXPECT_FALSE(obj.has<map_strv_str>());
+	EXPECT_FALSE(obj.has<map_strv_strv>());
+	EXPECT_FALSE(obj.has<map_strv_obj>());
 }
 
 TEST(ObjectTest, basic_has_unordered_map) {
@@ -170,6 +179,9 @@ TEST(ObjectTest, basic_has_unordered_map) {
 	EXPECT_FALSE(obj.has<unordered_map_str_str>());
 	EXPECT_FALSE(obj.has<unordered_map_str_strv>());
 	EXPECT_FALSE(obj.has<unordered_map_str_obj>());
+	EXPECT_FALSE(obj.has<unordered_map_strv_str>());
+	EXPECT_FALSE(obj.has<unordered_map_strv_strv>());
+	EXPECT_FALSE(obj.has<unordered_map_strv_obj>());
 }
 
 /** basic_get tests */
