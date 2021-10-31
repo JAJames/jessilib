@@ -259,6 +259,7 @@ std::string read_json_string(std::string_view& in_data) {
 
 				// Valid unicode sequence
 				result += in_data.substr(0, codepoint.units);
+				//result.append(reinterpret_cast<const char8_t*>(in_data.data()), codepoint.units);
 				in_data.remove_prefix(codepoint.units);
 				break;
 			}

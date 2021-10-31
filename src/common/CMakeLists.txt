@@ -1,6 +1,6 @@
 # Setup source files
 set(SOURCE_FILES
-        timer/timer.cpp timer/timer_manager.cpp thread_pool.cpp timer/timer_context.cpp timer/cancel_token.cpp timer/synchronized_timer.cpp object.cpp parser/parser.cpp parser/parser_manager.cpp config.cpp serialize.cpp parsers/json.cpp unicode.cpp io/command.cpp io/command_context.cpp io/message.cpp app_parameters.cpp)
+        timer/timer.cpp timer/timer_manager.cpp thread_pool.cpp timer/timer_context.cpp timer/cancel_token.cpp timer/synchronized_timer.cpp object.cpp parser/parser.cpp parser/parser_manager.cpp config.cpp serialize.cpp parsers/json.cpp unicode.cpp io/command.cpp io/command_context.cpp io/message.cpp app_parameters.cpp io/command_manager.cpp)
 
 # Setup library build target
 add_library(jessilib ${SOURCE_FILES})

@@ -50,7 +50,7 @@ static constexpr std::string_view COLOR_BG_DEFAULT{ "49" };
 } // namespace ansi
 
 template<>
-std::string text_to_string<ansi::text_wrapper>(const ansi::text_wrapper& in_text) {
+inline std::string text_to_string<ansi::text_wrapper>(const ansi::text_wrapper& in_text) {
 	std::string result;
 	result.reserve(in_text.string().size() + 8);
 

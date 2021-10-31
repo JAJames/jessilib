@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2019 Jessica James.
+ * Copyright (C) 2020 Jessica James.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,19 +16,23 @@
  * Written by Jessica James <jessica.aj@outlook.com>
  */
 
-#include <iostream>
-#include "app_parameters.hpp"
-#include "parsers/json.hpp"
-#include "console/console.hpp"
+#include "shutdown.hpp"
 
-int main(int argc, char** argv) {
-	jessilib::app_parameters parameters{ argc, argv };
+namespace jessibot {
 
-	if (parameters.hasSwitch("echoParameters")) {
-		// TODO: Write pretty JSON serializer based on JSON serializer
-		std::cout << std::endl << jessilib::json_parser{}.serialize(parameters) << std::endl;
-	}
-
-	jessibot::io::console_input_loop();
-	return 0;
+std::promise<void>& shutdown_promise() {
+	static std::promise<void> s_shutdown_promise;
+	return s_shutdown_promise;
 }
+
+std::shared_future<void> get_shutdown_future() {
+	static std::shared_future<void> s_shutdown_future{ shutdown_promise().get_future().share() };
+	return s_shutdown_future;
+}
+
+void notify_shutdown() {
+	shutdown_promise().set_value();
+}
+
+} // namespace jessibot
+

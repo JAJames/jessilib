@@ -26,13 +26,9 @@ namespace io {
 
 class command_manager {
 public:
-	struct entry {
-		basic_command* m_command;
-	};
-
 	void register_command(basic_command& in_command);
 	void unregister_command(basic_command& in_command);
-	bool execute_command(const command_context& in_context);
+	bool execute_command(command_context& in_context);
 
 	// executes a predicate for each command, until the predicate returns false or no commands remain
 	template<typename predicate_t> // TODO: add check for non-const
@@ -61,7 +57,11 @@ public:
 	static command_manager& instance();
 
 private:
-	std::vector<entry> m_commands;
+	//struct entry {
+	//	basic_command* m_command;
+	//};
+
+	std::vector<basic_command*> m_commands;
 	mutable std::shared_mutex m_commands_mutex;
 };
 

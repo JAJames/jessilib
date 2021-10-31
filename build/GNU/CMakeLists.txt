@@ -10,4 +10,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
 # Enable std::filesystem
-set(JESSILIB_ADDITOINAL_LIBS "stdc++fs")
+set(JESSILIB_ADDITOINAL_LIBS "stdc++fs" pthread)

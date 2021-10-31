@@ -26,13 +26,15 @@ namespace jessilib {
 
 /** encode_codepoint */
 
-size_t encode_codepoint(std::string& out_string, char32_t in_codepoint);
+size_t encode_codepoint(std::string& out_string, char32_t in_codepoint); // ASSUMES UTF-8
+size_t encode_codepoint(std::u8string& out_string, char32_t in_codepoint);
 size_t encode_codepoint(std::u16string& out_string, char32_t in_codepoint);
 size_t encode_codepoint(std::u32string& out_string, char32_t in_codepoint);
-size_t encode_codepoint(std::basic_ostream<char>& out_stream, char32_t in_codepoint);
+size_t encode_codepoint(std::basic_ostream<char>& out_stream, char32_t in_codepoint); // ASSUMES UTF-8
+size_t encode_codepoint(std::basic_ostream<char8_t>& out_stream, char32_t in_codepoint);
 size_t encode_codepoint(std::basic_ostream<char16_t>& out_stream, char32_t in_codepoint);
 size_t encode_codepoint(std::basic_ostream<char32_t>& out_stream, char32_t in_codepoint);
-std::string encode_codepoint_u8(char32_t in_codepoint);
+std::u8string encode_codepoint_u8(char32_t in_codepoint);
 std::u16string encode_codepoint_u16(char32_t in_codepoint);
 std::u32string encode_codepoint_u32(char32_t in_codepoint);
 
@@ -43,7 +45,8 @@ struct get_endpoint_result {
 	size_t units{};
 };
 
-get_endpoint_result decode_codepoint(const std::string_view& in_string); // UTF-8
+get_endpoint_result decode_codepoint(const std::string_view& in_string); // ASSUMES UTF-8
+get_endpoint_result decode_codepoint(const std::u8string_view& in_string); // UTF-8
 get_endpoint_result decode_codepoint(const std::u16string_view& in_string); // UTF-16
 get_endpoint_result decode_codepoint(const std::u32string_view& in_string); // UTF-32
 
@@ -59,7 +62,7 @@ char32_t advance_codepoint(std::basic_string_view<T>& in_string) {
 /** next_codepoint */
 
 template<typename T>
-std::string_view next_codepoint(const std::basic_string_view<T>& in_string) {
+std::basic_string_view<T> next_codepoint(const std::basic_string_view<T>& in_string) {
 	return in_string.substr(decode_codepoint(in_string).units);
 }
 

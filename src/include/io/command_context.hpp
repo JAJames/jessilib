@@ -37,8 +37,8 @@ public:
 	std::vector<std::string_view> paramaters() const;
 
 	/** Reply */
-	virtual bool privateReply(const formatted_message& in_message); // Reply to invoker privately (i.e: PM)
-	virtual bool publicReply(const formatted_message& in_message); // Reply to invoker publicly (i.e: channel)
+	virtual bool privateReply(const formatted_message& in_message) = 0; // Reply to invoker privately (i.e: PM)
+	virtual bool publicReply(const formatted_message& in_message) = 0; // Reply to invoker publicly (i.e: channel)
 
 	/** Additional contextual details */
 	virtual object details() const = 0; // Additional details

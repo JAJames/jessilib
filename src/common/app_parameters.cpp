@@ -35,7 +35,7 @@ app_parameters::app_parameters(int in_argc, const char** in_argv) {
 	m_path = in_argv[0];
 
 	// Process args
-	std::string_view key{ nullptr };
+	std::string_view key;
 	std::string value;
 	auto flush_value = [&key, &value, this]() {
 		// This is the start of a key; flush what we were previously processing

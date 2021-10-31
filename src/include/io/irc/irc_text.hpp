@@ -138,7 +138,7 @@ text::property properties_to_toggle(text::property in_active_properties, text::p
 } // namespace irc
 
 template<>
-std::string text_to_string<irc::text_wrapper>(const irc::text_wrapper& in_text) {
+inline std::string text_to_string<irc::text_wrapper>(const irc::text_wrapper& in_text) {
 	std::string result;
 	result.reserve(in_text.string().size() + 8);
 

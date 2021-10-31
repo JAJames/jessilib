@@ -32,7 +32,7 @@ void append_helper(std::basic_ostream<T>& out_string, T in_value) {
 	out_string << in_value;
 }
 
-template<typename T>
+template<typename T, typename CharT>
 size_t encode_codepoint_utf8(T& out_destination, char32_t in_codepoint) {
 	if (in_codepoint > 0x10FFFF) {
 		return 0;
@@ -40,30 +40,30 @@ size_t encode_codepoint_utf8(T& out_destination, char32_t in_codepoint) {
 
 	if (in_codepoint <= 0x007F) {
 		// 1-byte sequence (7 bits)
-		append_helper(out_destination, static_cast<char>(in_codepoint));
+		append_helper(out_destination, static_cast<CharT>(in_codepoint));
 		return 1;
 	}
 
 	if (in_codepoint <= 0x07FF) {
 		// 2-byte sequence (11 bits; 5 + 6)
-		append_helper(out_destination, static_cast<char>(0xC0 | ((in_codepoint >> 6) & 0x1F)));
-		append_helper(out_destination, static_cast<char>(0x80 | (in_codepoint & 0x3F)));
+		append_helper(out_destination, static_cast<CharT>(0xC0 | ((in_codepoint >> 6) & 0x1F)));
+		append_helper(out_destination, static_cast<CharT>(0x80 | (in_codepoint & 0x3F)));
 		return 2;
 	}
 
 	if (in_codepoint <= 0xFFFF) {
 		// 3-byte sequence (16 bits; 4 + 6 + 6)
-		append_helper(out_destination, static_cast<char>(0xE0 | ((in_codepoint >> 12) & 0x0F)));
-		append_helper(out_destination, static_cast<char>(0x80 | ((in_codepoint >> 6) & 0x3F)));
-		append_helper(out_destination, static_cast<char>(0x80 | (in_codepoint & 0x3F)));
+		append_helper(out_destination, static_cast<CharT>(0xE0 | ((in_codepoint >> 12) & 0x0F)));
+		append_helper(out_destination, static_cast<CharT>(0x80 | ((in_codepoint >> 6) & 0x3F)));
+		append_helper(out_destination, static_cast<CharT>(0x80 | (in_codepoint & 0x3F)));
 		return 3;
 	}
 
 	// 4-byte sequence (21 bits; 3 + 6 + 6 + 6)
-	append_helper(out_destination, static_cast<char>(0xF0 | ((in_codepoint >> 18) & 0x07)));
-	append_helper(out_destination, static_cast<char>(0x80 | ((in_codepoint >> 12) & 0x3F)));
-	append_helper(out_destination, static_cast<char>(0x80 | ((in_codepoint >> 6) & 0x3F)));
-	append_helper(out_destination, static_cast<char>(0x80 | (in_codepoint & 0x3F)));
+	append_helper(out_destination, static_cast<CharT>(0xF0 | ((in_codepoint >> 18) & 0x07)));
+	append_helper(out_destination, static_cast<CharT>(0x80 | ((in_codepoint >> 12) & 0x3F)));
+	append_helper(out_destination, static_cast<CharT>(0x80 | ((in_codepoint >> 6) & 0x3F)));
+	append_helper(out_destination, static_cast<CharT>(0x80 | (in_codepoint & 0x3F)));
 	return 4;
 }
 
@@ -97,7 +97,11 @@ size_t encode_codepoint_utf32(T& out_destination, char32_t in_codepoint) {
 }
 
 size_t encode_codepoint(std::string& out_string, char32_t in_codepoint) {
-	return encode_codepoint_utf8(out_string, in_codepoint);
+	return encode_codepoint_utf8<std::string, char>(out_string, in_codepoint);
+}
+
+size_t encode_codepoint(std::u8string& out_string, char32_t in_codepoint) {
+	return encode_codepoint_utf8<std::u8string, char8_t>(out_string, in_codepoint);
 }
 
 size_t encode_codepoint(std::u16string& out_string, char32_t in_codepoint) {
@@ -109,7 +113,11 @@ size_t encode_codepoint(std::u32string& out_string, char32_t in_codepoint) {
 }
 
 size_t encode_codepoint(std::basic_ostream<char>& out_stream, char32_t in_codepoint) {
-	return encode_codepoint_utf8(out_stream, in_codepoint);
+	return encode_codepoint_utf8<std::basic_ostream<char>, char>(out_stream, in_codepoint);
+}
+
+size_t encode_codepoint(std::basic_ostream<char8_t>& out_stream, char32_t in_codepoint) {
+	return encode_codepoint_utf8<std::basic_ostream<char8_t>, char8_t>(out_stream, in_codepoint);
 }
 
 size_t encode_codepoint(std::basic_ostream<char16_t>& out_stream, char32_t in_codepoint) {
@@ -120,8 +128,8 @@ size_t encode_codepoint(std::basic_ostream<char32_t>& out_stream, char32_t in_co
 	return encode_codepoint_utf32(out_stream, in_codepoint);
 }
 
-std::string encode_codepoint_u8(char32_t in_codepoint) {
-	std::string result;
+std::u8string encode_codepoint_u8(char32_t in_codepoint) {
+	std::u8string result;
 	encode_codepoint(result, in_codepoint);
 	return result;
 }
@@ -141,6 +149,10 @@ std::u32string encode_codepoint_u32(char32_t in_codepoint) {
 /** decode_codepoint */
 
 get_endpoint_result decode_codepoint(const std::string_view& in_string) {
+	return decode_codepoint(std::u8string_view{ reinterpret_cast<const char8_t*>(in_string.data()), in_string.size() });
+}
+
+get_endpoint_result decode_codepoint(const std::u8string_view& in_string) {
 	get_endpoint_result result{ 0, 0 };
 
 	if (in_string.empty()) {
