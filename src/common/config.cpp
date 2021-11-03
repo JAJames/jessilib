@@ -32,7 +32,7 @@ config::file_error::file_error()
 }
 
 config::file_error::file_error(const std::filesystem::path& in_filename)
-	: std::runtime_error{ "Error openening file \"" + std::string{ in_filename } + "\". Error: " + std::strerror(errno) } {
+	: std::runtime_error{ "Error opening file \"" + in_filename.string() + "\". Error: " + std::strerror(errno) } {
 	// Empty ctor body
 };
 
@@ -136,7 +136,7 @@ std::string config::get_format(const std::filesystem::path& in_filename, const s
 	}
 
 	// Try to determine format from filename
-	std::string extension = in_filename.extension();
+	std::string extension = in_filename.extension().string();
 	if jessilib_assert(!extension.empty()) {
 		return extension.substr(1);
 	}

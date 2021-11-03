@@ -47,12 +47,18 @@ TEST(JsonParser, serialize_decimal) {
 	EXPECT_DOUBLE_EQ(std::atof(parser.serialize(1234.0).c_str()), 1234.0);
 }
 
+// necessary due to some sort of bug with EXPECT_EQ on MSVC
+template<typename LeftT, typename RightT>
+void expect_eq(LeftT in_left, RightT in_right) {
+	EXPECT_EQ(in_left, in_right);
+}
+
 TEST(JsonParser, serialize_string) {
 	json_parser parser;
 
 	EXPECT_EQ(parser.serialize("text"), R"json("text")json");
-	EXPECT_EQ(parser.serialize("\"text\""), R"json("\"text\"")json");
-	EXPECT_EQ(parser.serialize("\"te\x10xt\""), R"json("\"te\u0010xt\"")json");
+	expect_eq(parser.serialize("\"text\""), R"json("\"text\"")json");
+	expect_eq(parser.serialize("\"te\x10xt\""), R"json("\"te\u0010xt\"")json");
 }
 
 TEST(JsonParser, serialize_array) {

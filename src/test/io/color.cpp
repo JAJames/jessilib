@@ -74,7 +74,7 @@ TEST(ColorTest, copy) {
 	color color_rgb{ 0x12, 0x34, 0x56 };
 
 	EXPECT_EQ(color_value, color_rgb);
-	EXPECT_EQ(color_value.value(), g_constexpr_color);
+	EXPECT_EQ(color_value.value(), g_constexpr_color.value());
 	EXPECT_EQ(color_value.red(), 0x12);
 	EXPECT_EQ(color_value.green(), 0x34);
 	EXPECT_EQ(color_value.blue(), 0x56);

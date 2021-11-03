@@ -50,7 +50,7 @@ public:
 			return in_object.get<std::string>();
 		}
 
-		return DEFAULT_SERIALIZE_RESULT;
+		return static_cast<std::string>(DEFAULT_SERIALIZE_RESULT);
 	}
 
 	static object deserialize_default(std::string_view in_data) {
@@ -58,7 +58,7 @@ public:
 	}
 
 	/** static members */
-	static constexpr const char DEFAULT_SERIALIZE_RESULT[]{ "serialize_result" };
+	static constexpr std::string_view DEFAULT_SERIALIZE_RESULT = "serialize_result"sv;
 	static std::function<std::string(const object&)> serialize_impl;
 	static std::function<object(std::string_view)> deserialize_impl;
 };

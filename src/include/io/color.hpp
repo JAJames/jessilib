@@ -70,7 +70,7 @@ public:
 		return m_value;
 	}
 
-	constexpr double distance(const color& in_color) const {
+	double distance(const color& in_color) const {
 		return std::sqrt(distance_sq(in_color));
 	}
 

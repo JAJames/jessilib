@@ -214,11 +214,11 @@ std::string process_message(const jessilib::io::formatted_message& msg) {
 
 	// Populate args
 	for (auto& text : msg.get_message()) {
-		args.emplace_back(fmt::internal::make_arg<fmt::format_context>(wrap_text<WrapperT>(text)));
+		args.emplace_back(fmt::detail::make_arg<fmt::format_context>(wrap_text<WrapperT>(text)));
 	}
 
 	// Pass args into vformat
-	fmt::format_args text_args{ args.data(), args.size() };
+	fmt::format_args text_args{ args.data(), static_cast<int>(args.size()) };
 	return fmt::vformat(msg.format(), text_args);
 }
 

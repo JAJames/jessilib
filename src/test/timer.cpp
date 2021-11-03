@@ -169,7 +169,7 @@ TEST(TimerTest, simultaneousTimers) {
 	}};
 
 	// Wait for some timers to fire
-	std::this_thread::sleep_for(period * 3);
+	std::this_thread::sleep_for(period + 100ms);
 	EXPECT_GE(timers_running, 2);
 
 	// Notify timers to close
