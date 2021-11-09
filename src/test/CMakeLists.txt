@@ -1,6 +1,6 @@
 # Setup source files
 set(SOURCE_FILES
-        timer.cpp thread_pool.cpp util.cpp object.cpp parser.cpp config.cpp parsers/json.cpp unicode.cpp app_parameters.cpp io/color.cpp duration.cpp)
+        timer.cpp thread_pool.cpp util.cpp object.cpp parser.cpp config.cpp parsers/json.cpp unicode.cpp app_parameters.cpp io/color.cpp duration.cpp split.cpp)
 
 # Setup gtest
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
