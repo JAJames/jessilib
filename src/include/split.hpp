@@ -47,7 +47,15 @@ using split_container_helper_t = decltype(split_container_helper_f<ContainerT, A
 
 } // namespace impl
 
-/** Splits an input string into substrings */
+/**
+ * Splits an input string into substrings
+ *
+ * @tparam ContainerT Container type to store the results in
+ * @tparam ContainerArgsT Optional template parameters for ContainerT
+ * @param in_string String to split
+ * @param in_delim Delimiter to split upon
+ * @return Container populated with
+ */
 template<template<typename...> typename ContainerT = std::vector, typename... ContainerArgsT, typename InputT>
 constexpr auto split(const InputT& in_string, typename InputT::value_type in_delim) {
 	using MemberT = typename impl::first_arg<ContainerArgsT..., std::basic_string<typename InputT::value_type>>::first_type;
@@ -63,13 +71,13 @@ constexpr auto split(const InputT& in_string, typename InputT::value_type in_del
 	for (auto itr = begin; itr != end; ++itr) {
 		if (*itr == in_delim) {
 			// Push token to result
-			result.emplace_back(begin, itr - begin);
+			result.emplace_back(begin, itr);
 			begin = itr + 1;
 		}
 	}
 
 	// Push final token to the end; may be empty
-	result.emplace_back(begin, end - begin);
+	result.emplace_back(begin, end);
 
 	return result;
 }
@@ -79,8 +87,9 @@ constexpr auto split(const InputT& in_string, typename InputT::value_type in_del
  * An empty pair if in_string is empty,
  * otherwise if the delimiter is not present, a pair who's `second` member is empty and `first` member is equal to `in_string`,
  * otherwise, a pair split at first instance of the delimiter
- * Complexity: O(in_string.size())
  *
+ * @tparam InStringT String type being passed into split_once
+ * @tparam ResultMemberT String type used to populate the result
  * @param in_string string to split
  * @param in_delim delimiter to split on
  * @return A pair representing `in_string` split at a delimiter, with first half stored in `first` and second in `last`
@@ -117,7 +126,7 @@ constexpr std::pair<ResultMemberT, ResultMemberT> split_once(const InStringT& in
  * @param in_string String to split
  * @param in_delim Delimiter to split upon
  * @param in_limit Maximum number of times to split
- * @return ResultT containing to up `in_limit` + 1 substrings
+ * @return Container containing to up `in_limit` + 1 substrings; result[in_limit] is the unprocessed remainder
  */
 template<template<typename...> typename ContainerT = std::vector, typename... ContainerArgsT, typename InputT>
 constexpr auto split_n(const InputT& in_string, typename InputT::value_type in_delim, size_t in_limit) {
@@ -134,14 +143,14 @@ constexpr auto split_n(const InputT& in_string, typename InputT::value_type in_d
 	for (auto itr = begin; itr != end && in_limit != 0; ++itr) {
 		if (*itr == in_delim) {
 			// Push token to result
-			result.emplace_back(begin, itr - begin);
+			result.emplace_back(begin, itr);
 			begin = itr + 1;
 			--in_limit;
 		}
 	}
 
 	// Push final token to the end; may be empty
-	result.emplace_back(begin, end - begin);
+	result.emplace_back(begin, end);
 
 	return result;
 }

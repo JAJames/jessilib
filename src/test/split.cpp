@@ -67,9 +67,9 @@ public:
 };
 TYPED_TEST_SUITE(SplitNTest, char_types);
 
-template<typename T>
-std::basic_string<T> make_word(size_t length = 8, T delim = static_cast<T>(0)) {
-	std::basic_string<T> result;
+template<typename T, typename ResultT = std::basic_string<T>>
+ResultT make_word(size_t length = 8, T delim = static_cast<T>(0)) {
+	ResultT result;
 
 	if (length == 0) {
 		return {};
@@ -99,7 +99,7 @@ std::basic_string_view<T> make_word_view(size_t length = 8, T delim = static_cas
 	return s_result;
 }
 
-template<typename T>
+template<typename T, typename StringT = std::basic_string<T>>
 struct RandomTestData {
 	RandomTestData(T in_delim)
 		: m_delim{ in_delim } {
@@ -116,21 +116,22 @@ struct RandomTestData {
 
 		auto random_words = word_count_distribution(randgen);
 		while (m_tokens.size() < random_words) {
-			m_tokens.push_back(make_word<T>(word_length_distribution(randgen)));
-			m_str += m_tokens.back();
+			m_tokens.push_back(make_word<T, StringT>(word_length_distribution(randgen)));
+			m_str.insert(m_str.end(), m_tokens.back().begin(), m_tokens.back().end());
 			if (m_tokens.size() < random_words) {
-				m_str += m_delim;
+				m_str.insert(m_str.end(), m_delim);
 			}
 		}
 	}
 
-	std::basic_string<T> get_remainder(size_t in_times_split) {
-		std::basic_string<T> result;
+	StringT get_remainder(size_t in_times_split) {
+		StringT result;
 		while (in_times_split < m_tokens.size()) {
-			result += m_tokens[in_times_split];
+			auto& token = m_tokens[in_times_split];
+			result.insert(result.end(), token.begin(), token.end());
 			++in_times_split;
 			if (in_times_split < m_tokens.size()) {
-				result += m_delim;
+				result.insert(result.end(), m_delim);
 			}
 		}
 
@@ -138,8 +139,8 @@ struct RandomTestData {
 	}
 
 	T m_delim;
-	std::basic_string<T> m_str;
-	std::vector<std::basic_string<T>> m_tokens;
+	StringT m_str;
+	std::vector<StringT> m_tokens;
 };
 
 TYPED_TEST(SplitSVTest, empty) {
@@ -224,6 +225,14 @@ TYPED_TEST(SplitOnceTest, random) {
 	EXPECT_EQ(split_result.second, data.get_remainder(1));
 }
 
+TYPED_TEST(SplitOnceTest, random_vector) {
+	RandomTestData<TypeParam, std::vector<TypeParam>> data{ static_cast<TypeParam>(0) };
+	std::pair<std::vector<TypeParam>, std::vector<TypeParam>> split_result = split_once(data.m_str, data.m_delim);
+
+	EXPECT_EQ(split_result.first, data.m_tokens[0]);
+	EXPECT_EQ(split_result.second, data.get_remainder(1));
+}
+
 TYPED_TEST(SplitOnceTest, random_view) {
 	RandomTestData<TypeParam> data{ static_cast<TypeParam>(0) };
 	std::pair<std::basic_string_view<TypeParam>, std::basic_string_view<TypeParam>> split_result = split_once_view(data.m_str, data.m_delim);
@@ -238,6 +247,20 @@ TYPED_TEST(SplitNTest, random) {
 	RandomTestData<TypeParam> data{ static_cast<TypeParam>(0) };
 	constexpr size_t n = 4;
 	std::vector<std::basic_string<TypeParam>> split_result = split_n(data.m_str, data.m_delim, n);
+
+	// Tokens shall be same up until last one (n + 1)
+	EXPECT_EQ(split_result.size(), n + 1);
+	for (size_t index = 0; index != n; ++index) {
+		EXPECT_EQ(split_result[index], data.m_tokens[index]);
+	}
+
+	EXPECT_EQ(split_result[n], data.get_remainder(n));
+}
+
+TYPED_TEST(SplitNTest, random_vector) {
+	RandomTestData<TypeParam, std::vector<TypeParam>> data{ static_cast<TypeParam>(0) };
+	constexpr size_t n = 4;
+	std::vector<std::vector<TypeParam>> split_result = split_n<std::vector, std::vector<TypeParam>>(data.m_str, data.m_delim, n);
 
 	// Tokens shall be same up until last one (n + 1)
 	EXPECT_EQ(split_result.size(), n + 1);
@@ -279,7 +302,13 @@ TYPED_TEST(SplitSringTest, single_word) {
 
 TYPED_TEST(SplitSringTest, random) {
 	RandomTestData<TypeParam> data{ static_cast<TypeParam>(0) };
-	auto split_result = split(data.m_str, data.m_delim);
+	std::vector<std::basic_string<TypeParam>> split_result = split(data.m_str, data.m_delim);
+	EXPECT_EQ(split_result, data.m_tokens);
+}
+
+TYPED_TEST(SplitSringTest, random_vector) {
+	RandomTestData<TypeParam, std::vector<TypeParam>> data{ static_cast<TypeParam>(0) };
+	std::vector<std::vector<TypeParam>> split_result = split<std::vector, std::vector<TypeParam>>(data.m_str, data.m_delim);
 	EXPECT_EQ(split_result, data.m_tokens);
 }
 
