@@ -44,7 +44,9 @@ void timer_manager::loop() {
 		auto itr{ m_active_timers.begin() };
 		if (itr != m_active_timers.end()) {
 			// Wait until the next timer is ready to fire
-			if (m_cvar.wait_until(lock, (*itr)->next()) == std::cv_status::timeout && itr != m_active_timers.end()) {
+			if (m_cvar.wait_until(lock, (*itr)->next()) == std::cv_status::timeout
+				&& itr == m_active_timers.begin() && itr != m_active_timers.end()) {
+
 				// Due to a race condition, we may still receive timeout when another thread has notified m_cvar too late
 				// Notifying the thread before releasing the lock does not resolve this, because wait_until's return
 				// status may be based entirely on the time of return and the input time (as is the case in GCC 7.2)

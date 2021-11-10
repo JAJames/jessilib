@@ -17,6 +17,7 @@
  */
 
 #include "timer.hpp"
+#include <atomic>
 #include "assert.hpp"
 #include "impl/timer_manager.hpp"
 #include "impl/timer_context.hpp"
@@ -35,35 +36,33 @@ public:
 
 	callback_with_iterations(const callback_with_iterations& in_callback)
 		: m_callback{ in_callback.m_callback },
-		m_iterations{ in_callback.m_iterations } {
+		m_iterations{ in_callback.m_iterations.load() } {
 		// Empty ctor body
 	}
 
 	callback_with_iterations(callback_with_iterations&& in_callback)
 		: m_callback{ std::move(in_callback.m_callback) },
-		m_iterations{ in_callback.m_iterations } {
+		m_iterations{ in_callback.m_iterations.load() } {
 		// Empty ctor body
 	}
 
 	void operator()(timer& in_timer) {
 		cancel_detector detector{ m_cancel_token };
 
-		{
-			std::unique_lock<std::mutex> iterations_guard(m_iterations_mutex);
+		auto iterations = m_iterations.load();
+		do {
 			// Ensure timer is not already expired
-			if (m_iterations == 0) {
+			if (iterations == 0) {
 				return;
 			}
 
 			// Decrement iterations and cancel if necessary
-			--m_iterations;
-		}
+		} while (!m_iterations.compare_exchange_weak(iterations, iterations - 1));
 
 		// Call callback
 		m_callback(in_timer);
 
 		if (!detector.expired()) {
-			std::unique_lock<std::mutex> iterations_guard(m_iterations_mutex);
 			if (m_iterations == 0) {
 				// Cancel the timer
 				in_timer.cancel();
@@ -73,8 +72,7 @@ public:
 
 private:
 	timer::function_t m_callback;
-	timer::iterations_t m_iterations;
-	std::mutex m_iterations_mutex;
+	std::atomic<timer::iterations_t> m_iterations;
 	cancel_token m_cancel_token;
 };
 
