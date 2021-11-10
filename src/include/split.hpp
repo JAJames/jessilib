@@ -20,6 +20,7 @@
 
 #include <string_view>
 #include <vector>
+#include "type_traits.hpp" // is_string_view; remove when compilers don't suck
 
 namespace jessilib {
 namespace impl {
@@ -45,6 +46,18 @@ constexpr auto split_container_helper_f() -> ContainerT<ArgsT...> {
 template<template<typename...> typename ContainerT, typename... ArgsT>
 using split_container_helper_t = decltype(split_container_helper_f<ContainerT, ArgsT...>());
 
+template<typename MemberT, typename ItrT, typename EndT, typename std::enable_if<is_basic_string_view<MemberT>::value>::type* = nullptr>
+MemberT member_from_range(ItrT in_itr, EndT in_end) {
+	// Workaround due to C++20 iterator constructor being inconsistently available
+	return { &*in_itr, static_cast<size_t>(in_end - in_itr) };
+}
+
+template<typename MemberT, typename ItrT, typename EndT, typename std::enable_if<!is_basic_string_view<MemberT>::value>::type* = nullptr>
+MemberT member_from_range(ItrT in_itr, EndT in_end) {
+	// Workaround due to C++20 iterator constructor being inconsistently available
+	return { in_itr, in_end };
+}
+
 } // namespace impl
 
 /**
@@ -66,18 +79,18 @@ constexpr auto split(const InputT& in_string, typename InputT::value_type in_del
 		return result;
 	}
 
-	auto begin = in_string.data();
-	auto end = in_string.data() + in_string.size();
+	auto begin = in_string.begin();
+	auto end = in_string.end();
 	for (auto itr = begin; itr != end; ++itr) {
 		if (*itr == in_delim) {
 			// Push token to result
-			result.emplace_back(begin, itr);
+			result.push_back(impl::member_from_range<MemberT>(begin, itr));
 			begin = itr + 1;
 		}
 	}
 
 	// Push final token to the end; may be empty
-	result.emplace_back(begin, end);
+	result.push_back(impl::member_from_range<MemberT>(begin, end));
 
 	return result;
 }
@@ -102,13 +115,13 @@ constexpr std::pair<ResultMemberT, ResultMemberT> split_once(const InStringT& in
 		return result;
 	}
 
-	auto begin = in_string.data();
-	auto end = in_string.data() + in_string.size();
+	auto begin = in_string.begin();
+	auto end = in_string.end();
 	for (auto itr = begin; itr != end; ++itr) {
 		if (*itr == in_delim) {
 			// in_delim found; split upon it
-			result.first = ResultMemberT{ begin, itr };
-			result.second = ResultMemberT{ itr + 1, end };
+			result.first = impl::member_from_range<ResultMemberT>(begin, itr);
+			result.second = impl::member_from_range<ResultMemberT>(itr + 1, end);
 			return result;
 		}
 	}
@@ -138,19 +151,19 @@ constexpr auto split_n(const InputT& in_string, typename InputT::value_type in_d
 		return result;
 	}
 
-	auto begin = in_string.data();
-	auto end = in_string.data() + in_string.size();
+	auto begin = in_string.begin();
+	auto end = in_string.end();
 	for (auto itr = begin; itr != end && in_limit != 0; ++itr) {
 		if (*itr == in_delim) {
 			// Push token to result
-			result.emplace_back(begin, itr);
+			result.push_back(impl::member_from_range<MemberT>(begin, itr));
 			begin = itr + 1;
 			--in_limit;
 		}
 	}
 
 	// Push final token to the end; may be empty
-	result.emplace_back(begin, end);
+	result.push_back(impl::member_from_range<MemberT>(begin, end));
 
 	return result;
 }

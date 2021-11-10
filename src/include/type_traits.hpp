@@ -27,6 +27,8 @@
 #include <unordered_set>
 #include <map>
 #include <unordered_map>
+#include <string>
+#include <string_view>
 
 namespace jessilib {
 
@@ -35,6 +37,32 @@ namespace jessilib {
 template<class T>
 struct remove_cvref {
 	typedef std::remove_cv_t<std::remove_reference_t<T>> type;
+};
+
+/** is_basic_string */
+
+template<typename T>
+struct is_basic_string : std::false_type {};
+
+template<typename T>
+struct is_basic_string<std::basic_string<T>> {
+	using type = T;
+	static constexpr bool value{ true };
+	constexpr operator bool() const noexcept { return true; }
+	constexpr bool operator()() const noexcept { return true; }
+};
+
+/** is_basic_string_view */
+
+template<typename T>
+struct is_basic_string_view : std::false_type {};
+
+template<typename T>
+struct is_basic_string_view<std::basic_string_view<T>> {
+	using type = T;
+	static constexpr bool value{ true };
+	constexpr operator bool() const noexcept { return true; }
+	constexpr bool operator()() const noexcept { return true; }
 };
 
 /** is_vector */
