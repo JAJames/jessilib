@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "io/command_context.hpp"
+#include "jessilib/io/command_context.hpp"
 
 namespace jessibot {
 namespace io {

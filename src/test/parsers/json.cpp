@@ -17,7 +17,7 @@
  */
 
 #include "test.hpp"
-#include "parsers/json.hpp"
+#include "jessilib/parsers/json.hpp"
 
 using namespace jessilib;
 using namespace std::literals;

@@ -16,8 +16,6 @@
  * Written by Jessica James <jessica.aj@outlook.com>
  */
 
-#include "split.hpp"
-#include <cassert>
 #include "test_split.hpp"
 
 using namespace jessilib;

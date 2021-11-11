@@ -16,7 +16,7 @@
  * Written by Jessica James <jessica.aj@outlook.com>
  */
 
-#include "unicode.hpp"
+#include "jessilib/unicode.hpp"
 #include "test.hpp"
 
 using namespace jessilib;

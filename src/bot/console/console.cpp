@@ -19,8 +19,8 @@
 #include "console.hpp"
 
 #include <iostream>
-#include "io/command_manager.hpp"
-#include "io/ansi/ansi_text.hpp"
+#include "jessilib/io/command_manager.hpp"
+#include "jessilib/io/ansi/ansi_text.hpp"
 #include "shutdown.hpp"
 #include "console/console_command_context.hpp"
 

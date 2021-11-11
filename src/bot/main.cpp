@@ -17,8 +17,8 @@
  */
 
 #include <iostream>
-#include "app_parameters.hpp"
-#include "parsers/json.hpp"
+#include "jessilib/app_parameters.hpp"
+#include "jessilib/parsers/json.hpp"
 #include "console/console.hpp"
 
 int main(int argc, char** argv) {

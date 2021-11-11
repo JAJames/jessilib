@@ -17,7 +17,7 @@
  */
 
 #include "test.hpp"
-#include "app_parameters.hpp"
+#include "jessilib/app_parameters.hpp"
 
 using namespace jessilib;
 using namespace std::literals;

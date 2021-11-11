@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "split.hpp"
+#include "jessilib/split.hpp"
 #include "test.hpp"
 #include <random>
 

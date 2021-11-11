@@ -7,6 +7,7 @@ add_library(jessilib ${SOURCE_FILES})
 
 # Setup include directories
 target_include_directories(jessilib PUBLIC ../include)
+target_include_directories(jessilib PRIVATE ../include/jessilib)
 target_include_directories(jessilib PRIVATE ../include/impl/asio/include)
 
 # Setup additionally needed libs

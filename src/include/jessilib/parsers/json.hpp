@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "parser.hpp"
+#include "jessilib/parser.hpp"
 
 namespace jessilib {
 

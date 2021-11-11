@@ -16,7 +16,7 @@
  * Written by Jessica James <jessica.aj@outlook.com>
  */
 
-#include "io/color.hpp"
+#include "jessilib/io/color.hpp"
 #include "test.hpp"
 
 using namespace jessilib;

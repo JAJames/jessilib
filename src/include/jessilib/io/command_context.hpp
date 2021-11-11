@@ -19,7 +19,7 @@
 #pragma once
 
 #include <string_view>
-#include "object.hpp"
+#include "jessilib/object.hpp"
 #include "message.hpp"
 
 namespace jessilib {

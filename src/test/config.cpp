@@ -20,8 +20,8 @@
 #include <filesystem>
 #include <fstream>
 #include "test.hpp"
-#include "config.hpp"
-#include "serialize.hpp" // format_not_available
+#include "jessilib/config.hpp"
+#include "jessilib/serialize.hpp" // format_not_available
 
 using namespace jessilib;
 using namespace std::literals;

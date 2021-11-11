@@ -16,8 +16,8 @@
  * Written by Jessica James <jessica.aj@outlook.com>
  */
 
-#include "io/command.hpp"
-#include "io/command_manager.hpp"
+#include "jessilib/io/command.hpp"
+#include "jessilib/io/command_manager.hpp"
 #include "shutdown.hpp"
 
 namespace jessibot {

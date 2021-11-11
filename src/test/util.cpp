@@ -16,9 +16,8 @@
  * Written by Jessica James <jessica.aj@outlook.com>
  */
 
-#include "util.hpp"
+#include "jessilib/util.hpp"
 #include "test.hpp"
-#include "object.hpp"
 
 using namespace jessilib;
 using namespace std::literals;

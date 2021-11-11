@@ -18,7 +18,7 @@
 
 #include <chrono>
 #include "test.hpp"
-#include "thread_pool.hpp"
+#include "jessilib/thread_pool.hpp"
 
 using namespace jessilib;
 using namespace std::literals;

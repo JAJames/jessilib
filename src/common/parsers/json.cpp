@@ -221,7 +221,7 @@ std::string read_json_string(std::string_view& in_data) {
 
 								if (is_low_surrogate(second_codepoint)) {
 									// We've got a valid surrogate pair; serialize the represented codepoint; decode it
-									codepoint = decode_surrogate_pair(codepoint, second_codepoint).codepoint;
+									codepoint = static_cast<char16_t>(decode_surrogate_pair(codepoint, second_codepoint).codepoint);
 									encode_codepoint(result, codepoint); // serialize the real codepoint
 								}
 								else {
@@ -296,7 +296,7 @@ object read_json_number(std::string_view& in_data) {
 
 	// parse_decimal_part method
 	in_data.remove_prefix(1); // strip leading '.'
-	long double decimal_value = integer_value;
+	long double decimal_value = static_cast<long double>(integer_value);
 	from_chars_end = parse_decimal_part(in_data.data(), in_data.data() + in_data.size(), decimal_value);
 	// TODO: parse exponent
 

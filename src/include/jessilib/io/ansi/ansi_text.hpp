@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "io/message.hpp"
+#include "jessilib/io/message.hpp"
 
 namespace jessilib {
 namespace io {

@@ -16,9 +16,8 @@
  * Written by Jessica James <jessica.aj@outlook.com>
  */
 
-#include <chrono>
 #include "test.hpp"
-#include "object.hpp"
+#include "jessilib/object.hpp"
 
 using namespace jessilib;
 using namespace std::literals;

@@ -16,7 +16,7 @@
  * Written by Jessica James <jessica.aj@outlook.com>
  */
 
-#include "duration.hpp"
+#include "jessilib/duration.hpp"
 #include "test.hpp"
 
 using namespace jessilib;

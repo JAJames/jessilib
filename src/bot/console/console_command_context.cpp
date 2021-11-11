@@ -19,7 +19,7 @@
 #include "console_command_context.hpp"
 
 #include <iostream>
-#include "io/ansi/ansi_text.hpp"
+#include "jessilib/io/ansi/ansi_text.hpp"
 
 namespace jessibot {
 namespace io {

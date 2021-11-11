@@ -24,8 +24,8 @@
 #include <condition_variable>
 #include <atomic>
 #include <thread>
-#include "../timer.hpp"
-#include "../thread_pool.hpp"
+#include "timer.hpp"
+#include "thread_pool.hpp"
 #include "timer_context.hpp"
 
 namespace jessilib {

@@ -20,7 +20,7 @@
 * Tests which exist solely test test compilation for split.hpp, because MSVC demands /bigobj, and I don't want to
 */
 
-#include "split.hpp"
+#include "jessilib/split.hpp"
 #include <deque>
 #include <list>
 #include "test_split.hpp"
