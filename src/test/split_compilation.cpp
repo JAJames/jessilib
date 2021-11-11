@@ -101,3 +101,10 @@ TYPED_TEST(SplitCompilationTest, empty_list_long) {
 	EXPECT_TRUE(split_view<std::list>(empty, delim).empty());
 	EXPECT_TRUE(split_n_view<std::list>(empty, delim, 5).empty());
 }
+
+TYPED_TEST(SplitCompilationTest, random_vector) {
+	std::vector<std::vector<std::vector<TypeParam>>> empty;
+	std::vector<std::vector<TypeParam>> delim;
+	std::vector<std::vector<std::vector<std::vector<TypeParam>>>> split_result = split<std::vector, decltype(empty)>(empty, delim);
+	EXPECT_TRUE(split_result.empty());
+}
