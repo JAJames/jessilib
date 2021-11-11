@@ -29,24 +29,23 @@
 #include <vector>
 
 namespace jessilib {
-namespace impl {
 
-template<template<typename...> typename ContainerT, typename FallbackArg, typename... ArgsT>
-struct split_container_helper {
-	using type = ContainerT<FallbackArg>;
+template<template<typename...> typename ContainerT, typename ElementT, typename...>
+struct split_defaults {
+	using member_type = std::basic_string<ElementT>;
+	using container_type = ContainerT<member_type>;
 };
 
-template<template<typename...> typename ContainerT, typename FallbackArg, typename FirstOptional, typename... ArgsT>
-struct split_container_helper<ContainerT, FallbackArg, FirstOptional, ArgsT...> {
-	using type = ContainerT<FirstOptional, ArgsT...>;
+template<template<typename...> typename ContainerT, typename ElementT, typename FirstOptional, typename... ContainerArgsT>
+struct split_defaults<ContainerT, ElementT, FirstOptional, ContainerArgsT...> {
+	using member_type = FirstOptional;
+	using container_type = ContainerT<FirstOptional, ContainerArgsT...>;
 };
 
-template<template<typename...> typename ContainerT, typename... ArgsT>
-using split_container_helper_t = typename split_container_helper<ContainerT, ArgsT...>::type;
-
+// Can probably be specialized for types which don't take in iterators _or_
 template<typename MemberT, typename ItrT, typename EndT, typename std::enable_if<!std::is_constructible<MemberT, ItrT, EndT>::value>::type* = nullptr>
-MemberT member_from_range(ItrT in_itr, EndT in_end) {
-	// Workaround due to C++20 iterator constructor being inconsistently available
+MemberT make_split_member(ItrT in_itr, EndT in_end) {
+	// Intended for string_view
 	if constexpr (std::is_pointer_v<MemberT>) {
 		return { in_itr, static_cast<size_t>(in_end - in_itr) };
 	}
@@ -59,12 +58,10 @@ MemberT member_from_range(ItrT in_itr, EndT in_end) {
 }
 
 template<typename MemberT, typename ItrT, typename EndT, typename std::enable_if<std::is_constructible<MemberT, ItrT, EndT>::value>::type* = nullptr>
-MemberT member_from_range(ItrT in_itr, EndT in_end) {
-	// Workaround due to C++20 iterator constructor being inconsistently available
+MemberT make_split_member(ItrT in_itr, EndT in_end) {
+	// Can construct with iterators, so construct with iterators
 	return { in_itr, in_end };
 }
-
-} // namespace impl
 
 /**
  * Splits an input string into substrings
@@ -78,8 +75,9 @@ MemberT member_from_range(ItrT in_itr, EndT in_end) {
  */
 template<template<typename...> typename ContainerT = std::vector, typename... ContainerArgsT, typename ItrT, typename EndT, typename ElementT>
 constexpr auto split(ItrT begin, EndT end, ElementT in_delim) {
-	using MemberT = std::tuple_element_t<0, std::tuple<ContainerArgsT..., std::basic_string<ElementT>>>;
-	using container_type = impl::split_container_helper_t<ContainerT, MemberT, ContainerArgsT...>;
+	using split_defaults_type = split_defaults<ContainerT, ElementT, ContainerArgsT...>;
+	using member_type = typename split_defaults_type::member_type;
+	using container_type = typename split_defaults_type::container_type;
 
 	container_type result;
 	if (begin >= end) {
@@ -90,13 +88,13 @@ constexpr auto split(ItrT begin, EndT end, ElementT in_delim) {
 	for (auto itr = begin; itr != end; ++itr) {
 		if (*itr == in_delim) {
 			// Push token to result
-			result.push_back(impl::member_from_range<MemberT>(begin, itr));
+			result.push_back(make_split_member<member_type>(begin, itr));
 			begin = itr + 1;
 		}
 	}
 
 	// Push final token to the end; may be empty
-	result.push_back(impl::member_from_range<MemberT>(begin, end));
+	result.push_back(make_split_member<member_type>(begin, end));
 
 	return result;
 }
@@ -115,8 +113,9 @@ constexpr auto split(ItrT begin, EndT end, ElementT in_delim) {
 template<template<typename...> typename ContainerT = std::vector, typename... ContainerArgsT, typename ItrT, typename EndT, typename DelimItrT, typename DelimEndT>
 constexpr auto split(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimEndT in_delim_end) {
 	using ElementT = std::remove_cvref_t<decltype(*begin)>;
-	using MemberT = std::tuple_element_t<0, std::tuple<ContainerArgsT..., std::basic_string<ElementT>>>;
-	using container_type = impl::split_container_helper_t<ContainerT, MemberT, ContainerArgsT...>;
+	using split_defaults_type = split_defaults<ContainerT, ElementT, ContainerArgsT...>;
+	using member_type = typename split_defaults_type::member_type;
+	using container_type = typename split_defaults_type::container_type;
 
 	auto delim_length = std::distance(in_delim_begin, in_delim_end);
 	if (delim_length == 1) {
@@ -132,7 +131,7 @@ constexpr auto split(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimEndT i
 	if (in_delim_begin >= in_delim_end
 		|| (end - begin) < delim_length) {
 		// Absent or impossible to match delimiter, therefore no match, therefore return input as single token
-		result.push_back(impl::member_from_range<MemberT>(begin, end));
+		result.push_back(make_split_member<member_type>(begin, end));
 		return result;
 	}
 
@@ -140,7 +139,7 @@ constexpr auto split(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimEndT i
 	for (auto itr = begin; itr < itr_end;) {
 		if (std::equal(in_delim_begin, in_delim_end, itr)) {
 			// Push token to result
-			result.push_back(impl::member_from_range<MemberT>(begin, itr));
+			result.push_back(make_split_member<member_type>(begin, itr));
 			itr += delim_length;
 			begin = itr;
 			continue;
@@ -150,7 +149,7 @@ constexpr auto split(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimEndT i
 	}
 
 	// Push final token to the end; may be empty
-	result.push_back(impl::member_from_range<MemberT>(begin, end));
+	result.push_back(make_split_member<member_type>(begin, end));
 
 	return result;
 }
@@ -201,14 +200,14 @@ constexpr auto split_once(ItrT begin, EndT end, ElementT in_delim) {
 	for (auto itr = begin; itr != end; ++itr) {
 		if (*itr == in_delim) {
 			// in_delim found; split upon it
-			result.first = impl::member_from_range<MemberT>(begin, itr);
-			result.second = impl::member_from_range<MemberT>(itr + 1, end);
+			result.first = make_split_member<MemberT>(begin, itr);
+			result.second = make_split_member<MemberT>(itr + 1, end);
 			return result;
 		}
 	}
 
 	// in_delim not found
-	result.first = impl::member_from_range<MemberT>(begin, end);
+	result.first = make_split_member<MemberT>(begin, end);
 	return result;
 }
 
@@ -245,7 +244,7 @@ constexpr auto split_once(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimE
 	if (in_delim_begin >= in_delim_end
 		|| (end - begin) < delim_length) {
 		// Absent or impossible to match delimiter, therefore no match, therefore return input as single token
-		result.first = impl::member_from_range<MemberT>(begin, end);
+		result.first = make_split_member<MemberT>(begin, end);
 		return result;
 	}
 
@@ -253,14 +252,14 @@ constexpr auto split_once(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimE
 	for (auto itr = begin; itr < itr_end;) {
 		if (std::equal(in_delim_begin, in_delim_end, itr)) {
 			// in_delim found; split upon it
-			result.first = impl::member_from_range<MemberT>(begin, itr);
-			result.second = impl::member_from_range<MemberT>(itr + delim_length, end);
+			result.first = make_split_member<MemberT>(begin, itr);
+			result.second = make_split_member<MemberT>(itr + delim_length, end);
 			return result;
 		}
 	}
 
 	// in_delim not found
-	result.first = impl::member_from_range<MemberT>(begin, end);
+	result.first = make_split_member<MemberT>(begin, end);
 	return result;
 }
 
@@ -305,8 +304,9 @@ constexpr auto split_once(const InputT& in_string, const DelimT& in_delim) {
  */
 template<template<typename...> typename ContainerT = std::vector, typename... ContainerArgsT, typename ItrT, typename EndT, typename ElementT>
 constexpr auto split_n(ItrT begin, EndT end, ElementT in_delim, size_t in_limit) {
-	using MemberT = std::tuple_element_t<0, std::tuple<ContainerArgsT..., std::basic_string<ElementT>>>;
-	using container_type = impl::split_container_helper_t<ContainerT, MemberT, ContainerArgsT...>;
+	using split_defaults_type = split_defaults<ContainerT, ElementT, ContainerArgsT...>;
+	using member_type = typename split_defaults_type::member_type;
+	using container_type = typename split_defaults_type::container_type;
 
 	container_type result;
 	if (begin >= end) {
@@ -317,14 +317,14 @@ constexpr auto split_n(ItrT begin, EndT end, ElementT in_delim, size_t in_limit)
 	for (auto itr = begin; itr != end && in_limit != 0; ++itr) {
 		if (*itr == in_delim) {
 			// Push token to result
-			result.push_back(impl::member_from_range<MemberT>(begin, itr));
+			result.push_back(make_split_member<member_type>(begin, itr));
 			begin = itr + 1;
 			--in_limit;
 		}
 	}
 
 	// Push final token to the end; may be empty
-	result.push_back(impl::member_from_range<MemberT>(begin, end));
+	result.push_back(make_split_member<member_type>(begin, end));
 
 	return result;
 }
@@ -344,8 +344,9 @@ constexpr auto split_n(ItrT begin, EndT end, ElementT in_delim, size_t in_limit)
 template<template<typename...> typename ContainerT = std::vector, typename... ContainerArgsT, typename ItrT, typename EndT, typename DelimItrT, typename DelimEndT>
 constexpr auto split_n(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimEndT in_delim_end, size_t in_limit) {
 	using ElementT = std::remove_cvref_t<decltype(*begin)>;
-	using MemberT = std::tuple_element_t<0, std::tuple<ContainerArgsT..., std::basic_string<ElementT>>>;
-	using container_type = impl::split_container_helper_t<ContainerT, MemberT, ContainerArgsT...>;
+	using split_defaults_type = split_defaults<ContainerT, ElementT, ContainerArgsT...>;
+	using member_type = typename split_defaults_type::member_type;
+	using container_type = typename split_defaults_type::container_type;
 
 	auto delim_length = std::distance(in_delim_begin, in_delim_end);
 	if (delim_length == 1) {
@@ -361,7 +362,7 @@ constexpr auto split_n(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimEndT
 	if (in_delim_begin >= in_delim_end
 		|| (end - begin) < delim_length) {
 		// Absent or impossible to match delimiter, therefore no match, therefore return input as single token
-		result.push_back(impl::member_from_range<MemberT>(begin, end));
+		result.push_back(make_split_member<member_type>(begin, end));
 		return result;
 	}
 
@@ -369,7 +370,7 @@ constexpr auto split_n(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimEndT
 	for (auto itr = begin; itr < itr_end && in_limit != 0;) {
 		if (std::equal(in_delim_begin, in_delim_end, itr)) {
 			// Push token to result
-			result.push_back(impl::member_from_range<MemberT>(begin, itr));
+			result.push_back(make_split_member<member_type>(begin, itr));
 			itr += delim_length;
 			begin = itr;
 			--in_limit;
@@ -380,7 +381,7 @@ constexpr auto split_n(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimEndT
 	}
 
 	// Push final token to the end; may be empty
-	result.push_back(impl::member_from_range<MemberT>(begin, end));
+	result.push_back(make_split_member<member_type>(begin, end));
 
 	return result;
 }
