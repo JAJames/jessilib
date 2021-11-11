@@ -336,7 +336,6 @@ constexpr auto split_n(ItrT begin, EndT end, ElementT in_delim, size_t in_limit)
  * @tparam ContainerArgsT Optional template parameters for ContainerT
  * @param begin Start of range of elements to split
  * @param end End of range of elements to split
- * @param in_delim Delimiter to split upon
  * @param in_delim_begin Start of range containing the delimiter
  * @param in_delim_end End of range containing the delimiter
  * @return Container containing to up `in_limit` + 1 substrings; result[in_limit] is the unprocessed remainder
