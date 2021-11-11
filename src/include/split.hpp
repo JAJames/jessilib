@@ -27,44 +27,38 @@
 
 #include <string_view>
 #include <vector>
-#include "type_traits.hpp" // is_basic_string_view; remove when compilers don't suck
 
 namespace jessilib {
 namespace impl {
 
-template<typename FirstArgT, typename...>
-struct first_arg {
-	using first_type = FirstArgT;
+template<template<typename...> typename ContainerT, typename FallbackArg, typename... ArgsT>
+struct split_container_helper {
+	using type = ContainerT<FallbackArg>;
 };
 
-// Using a function's return type because both `using` and classes require parameter packs be at the end
-template<template<typename...> typename ContainerT, typename DefaultMemberT, typename... ArgsT,
-	typename std::enable_if<sizeof...(ArgsT) == 0>::type* = nullptr>
-constexpr auto split_container_helper_f() -> ContainerT<DefaultMemberT> {
-	return {};
-};
-
-template<template<typename...> typename ContainerT, typename DefaultMemberT, typename... ArgsT,
-	typename std::enable_if<sizeof...(ArgsT) != 0>::type* = nullptr>
-constexpr auto split_container_helper_f() -> ContainerT<ArgsT...> {
-	return {};
+template<template<typename...> typename ContainerT, typename FallbackArg, typename FirstOptional, typename... ArgsT>
+struct split_container_helper<ContainerT, FallbackArg, FirstOptional, ArgsT...> {
+	using type = ContainerT<FirstOptional, ArgsT...>;
 };
 
 template<template<typename...> typename ContainerT, typename... ArgsT>
-using split_container_helper_t = decltype(split_container_helper_f<ContainerT, ArgsT...>());
+using split_container_helper_t = typename split_container_helper<ContainerT, ArgsT...>::type;
 
-template<typename MemberT, typename ItrT, typename EndT, typename std::enable_if<is_basic_string_view<MemberT>::value>::type* = nullptr>
+template<typename MemberT, typename ItrT, typename EndT, typename std::enable_if<!std::is_constructible<MemberT, ItrT, EndT>::value>::type* = nullptr>
 MemberT member_from_range(ItrT in_itr, EndT in_end) {
 	// Workaround due to C++20 iterator constructor being inconsistently available
 	if constexpr (std::is_pointer_v<MemberT>) {
 		return { in_itr, static_cast<size_t>(in_end - in_itr) };
 	}
 
-	auto& element = *in_itr;
-	return { &element, static_cast<size_t>(in_end - in_itr) };
+	if (in_itr == in_end) {
+		return {};
+	}
+
+	return { &*in_itr, static_cast<size_t>(in_end - in_itr) };
 }
 
-template<typename MemberT, typename ItrT, typename EndT, typename std::enable_if<!is_basic_string_view<MemberT>::value>::type* = nullptr>
+template<typename MemberT, typename ItrT, typename EndT, typename std::enable_if<std::is_constructible<MemberT, ItrT, EndT>::value>::type* = nullptr>
 MemberT member_from_range(ItrT in_itr, EndT in_end) {
 	// Workaround due to C++20 iterator constructor being inconsistently available
 	return { in_itr, in_end };
@@ -84,7 +78,7 @@ MemberT member_from_range(ItrT in_itr, EndT in_end) {
  */
 template<template<typename...> typename ContainerT = std::vector, typename... ContainerArgsT, typename ItrT, typename EndT, typename ElementT>
 constexpr auto split(ItrT begin, EndT end, ElementT in_delim) {
-	using MemberT = typename impl::first_arg<ContainerArgsT..., std::basic_string<ElementT>>::first_type;
+	using MemberT = std::tuple_element_t<0, std::tuple<ContainerArgsT..., std::basic_string<ElementT>>>;
 	using container_type = impl::split_container_helper_t<ContainerT, MemberT, ContainerArgsT...>;
 
 	container_type result;
@@ -121,7 +115,7 @@ constexpr auto split(ItrT begin, EndT end, ElementT in_delim) {
 template<template<typename...> typename ContainerT = std::vector, typename... ContainerArgsT, typename ItrT, typename EndT, typename DelimItrT, typename DelimEndT>
 constexpr auto split(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimEndT in_delim_end) {
 	using ElementT = std::remove_cvref_t<decltype(*begin)>;
-	using MemberT = typename impl::first_arg<ContainerArgsT..., std::basic_string<ElementT>>::first_type;
+	using MemberT = std::tuple_element_t<0, std::tuple<ContainerArgsT..., std::basic_string<ElementT>>>;
 	using container_type = impl::split_container_helper_t<ContainerT, MemberT, ContainerArgsT...>;
 
 	auto delim_length = std::distance(in_delim_begin, in_delim_end);
@@ -196,7 +190,7 @@ constexpr auto split(const InputT& in_string, const DelimT& in_delim) {
 template<typename... OptionalMemberT, typename ItrT, typename EndT, typename ElementT>
 constexpr auto split_once(ItrT begin, EndT end, ElementT in_delim) {
 	static_assert(sizeof...(OptionalMemberT) <= 1, "Too many member types specified for OptionalMemberT");
-	using MemberT = typename impl::first_arg<OptionalMemberT..., std::basic_string<ElementT>>::first_type;
+	using MemberT = std::tuple_element_t<0, std::tuple<OptionalMemberT..., std::basic_string<ElementT>>>;
 
 	std::pair<MemberT, MemberT> result;
 	if (begin >= end) {
@@ -235,7 +229,7 @@ template<typename... OptionalMemberT, typename ItrT, typename EndT, typename Del
 constexpr auto split_once(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimEndT in_delim_end) {
 	static_assert(sizeof...(OptionalMemberT) <= 1, "Too many member types specified for OptionalMemberT");
 	using ElementT = std::remove_cvref_t<decltype(*begin)>;
-	using MemberT = typename impl::first_arg<OptionalMemberT..., std::basic_string<ElementT>>::first_type;
+	using MemberT = std::tuple_element_t<0, std::tuple<OptionalMemberT..., std::basic_string<ElementT>>>;
 
 	auto delim_length = std::distance(in_delim_begin, in_delim_end);
 	if (delim_length == 1) {
@@ -286,7 +280,7 @@ template<typename... OptionalMemberT, typename InputT>
 constexpr auto split_once(const InputT& in_string, typename InputT::value_type in_delim) {
 	static_assert(sizeof...(OptionalMemberT) <= 1, "Too many member types specified for OptionalMemberT");
 	using ElementT = typename InputT::value_type;
-	using MemberT = typename impl::first_arg<OptionalMemberT..., std::basic_string<ElementT>>::first_type;
+	using MemberT = std::tuple_element_t<0, std::tuple<OptionalMemberT..., std::basic_string<ElementT>>>;
 
 	return split_once<MemberT>(in_string.begin(), in_string.end(), in_delim);
 }
@@ -311,7 +305,7 @@ constexpr auto split_once(const InputT& in_string, const DelimT& in_delim) {
  */
 template<template<typename...> typename ContainerT = std::vector, typename... ContainerArgsT, typename ItrT, typename EndT, typename ElementT>
 constexpr auto split_n(ItrT begin, EndT end, ElementT in_delim, size_t in_limit) {
-	using MemberT = typename impl::first_arg<ContainerArgsT..., std::basic_string<ElementT>>::first_type;
+	using MemberT = std::tuple_element_t<0, std::tuple<ContainerArgsT..., std::basic_string<ElementT>>>;
 	using container_type = impl::split_container_helper_t<ContainerT, MemberT, ContainerArgsT...>;
 
 	container_type result;
@@ -350,7 +344,7 @@ constexpr auto split_n(ItrT begin, EndT end, ElementT in_delim, size_t in_limit)
 template<template<typename...> typename ContainerT = std::vector, typename... ContainerArgsT, typename ItrT, typename EndT, typename DelimItrT, typename DelimEndT>
 constexpr auto split_n(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimEndT in_delim_end, size_t in_limit) {
 	using ElementT = std::remove_cvref_t<decltype(*begin)>;
-	using MemberT = typename impl::first_arg<ContainerArgsT..., std::basic_string<ElementT>>::first_type;
+	using MemberT = std::tuple_element_t<0, std::tuple<ContainerArgsT..., std::basic_string<ElementT>>>;
 	using container_type = impl::split_container_helper_t<ContainerT, MemberT, ContainerArgsT...>;
 
 	auto delim_length = std::distance(in_delim_begin, in_delim_end);
