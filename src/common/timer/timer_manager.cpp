@@ -45,7 +45,7 @@ void timer_manager::loop() {
 		if (itr != m_active_timers.end()) {
 			// Wait until the next timer is ready to fire
 			if (m_cvar.wait_until(lock, (*itr)->next()) == std::cv_status::timeout
-				&& itr == m_active_timers.begin() && itr != m_active_timers.end()) {
+				&& !m_active_timers.empty() && itr == m_active_timers.begin() && itr != m_active_timers.end()) {
 
 				// Due to a race condition, we may still receive timeout when another thread has notified m_cvar too late
 				// Notifying the thread before releasing the lock does not resolve this, because wait_until's return
