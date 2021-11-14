@@ -105,6 +105,6 @@ TYPED_TEST(SplitCompilationTest, empty_list_long) {
 TYPED_TEST(SplitCompilationTest, random_vector) {
 	std::vector<std::vector<std::vector<TypeParam>>> empty;
 	std::vector<std::vector<TypeParam>> delim;
-	std::vector<std::vector<std::vector<std::vector<TypeParam>>>> split_result = split<std::vector, decltype(empty)>(empty, delim);
+	auto split_result = split(empty, delim);
 	EXPECT_TRUE(split_result.empty());
 }

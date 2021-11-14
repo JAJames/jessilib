@@ -32,7 +32,7 @@ namespace jessilib {
 
 template<template<typename...> typename ContainerT, typename ElementT, typename...>
 struct split_defaults {
-	using member_type = std::basic_string<ElementT>;
+	using member_type = std::conditional_t<std::is_trivial_v<ElementT>, std::basic_string<ElementT>, std::vector<ElementT>>;
 	using container_type = ContainerT<member_type>;
 };
 
@@ -44,7 +44,7 @@ struct split_defaults<ContainerT, ElementT, FirstOptional, ContainerArgsT...> {
 
 // Can probably be specialized for types which don't take in iterators _or_
 template<typename MemberT, typename ItrT, typename EndT, typename std::enable_if<!std::is_constructible<MemberT, ItrT, EndT>::value>::type* = nullptr>
-MemberT make_split_member(ItrT in_itr, EndT in_end) {
+constexpr MemberT make_split_member(ItrT in_itr, EndT in_end) {
 	// Intended for string_view
 	if constexpr (std::is_pointer_v<MemberT>) {
 		return { in_itr, static_cast<size_t>(in_end - in_itr) };
@@ -58,7 +58,7 @@ MemberT make_split_member(ItrT in_itr, EndT in_end) {
 }
 
 template<typename MemberT, typename ItrT, typename EndT, typename std::enable_if<std::is_constructible<MemberT, ItrT, EndT>::value>::type* = nullptr>
-MemberT make_split_member(ItrT in_itr, EndT in_end) {
+constexpr MemberT make_split_member(ItrT in_itr, EndT in_end) {
 	// Can construct with iterators, so construct with iterators
 	return { in_itr, in_end };
 }
