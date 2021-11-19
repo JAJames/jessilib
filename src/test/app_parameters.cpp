@@ -44,7 +44,7 @@ public:
 	}
 
 	int argc() const {
-		return m_args.size();
+		return static_cast<int>(m_args.size());
 	}
 
 private:

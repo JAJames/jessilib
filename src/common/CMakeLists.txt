@@ -5,6 +5,9 @@ set(SOURCE_FILES
 # Setup library build target
 add_library(jessilib ${SOURCE_FILES})
 
+# Ensure all symbols are exported by default on Windows, to avoid littering dllexport everywhere
+set_target_properties(jessilib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 # Setup include directories
 target_include_directories(jessilib PUBLIC ../include)
 target_include_directories(jessilib PRIVATE ../include/jessilib)

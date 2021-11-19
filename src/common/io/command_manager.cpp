@@ -28,7 +28,7 @@ void command_manager::register_command(basic_command& in_command) {
 
 void command_manager::unregister_command(basic_command& in_command) {
 	std::lock_guard<std::shared_mutex> guard{ m_commands_mutex };
-	std::remove(m_commands.begin(), m_commands.end(), &in_command);
+	std::erase(m_commands, &in_command);
 }
 
 bool command_manager::execute_command(command_context& in_context) {
