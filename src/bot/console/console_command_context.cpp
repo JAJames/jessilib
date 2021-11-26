@@ -39,7 +39,7 @@ bool console_command_context::publicReply(const jessilib::io::formatted_message&
 /** Additional contextual details */
 jessilib::object console_command_context::details() const {
 	static jessilib::object s_details {
-		jessilib::object::map_t{ { "table", "console" } }
+		jessilib::object::map_type{ { "table", "console" } }
 	};
 
 	return s_details;

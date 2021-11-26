@@ -67,8 +67,8 @@ TEST(ObjectTest, basic_has) {
 	EXPECT_FALSE(obj.has<double>());
 	EXPECT_FALSE(obj.has<long double>());
 	EXPECT_FALSE(obj.has<std::string>());
-	EXPECT_FALSE(obj.has<object::array_t>());
-	EXPECT_FALSE(obj.has<object::map_t>());
+	EXPECT_FALSE(obj.has<object::array_type>());
+	EXPECT_FALSE(obj.has<object::map_type>());
 }
 
 TEST(ObjectTest, basic_has_vector) {
@@ -200,8 +200,8 @@ TEST(ObjectTest, basic_get) {
 	EXPECT_EQ(obj.get<double>(), double{});
 	EXPECT_EQ(obj.get<long double>(), long_double_t{});
 	EXPECT_EQ(obj.get<std::string>(), std::string{});
-	EXPECT_TRUE(obj.get<object::array_t>().empty());
-	EXPECT_TRUE(obj.get<object::map_t>().empty());
+	EXPECT_TRUE(obj.get<object::array_type>().empty());
+	EXPECT_TRUE(obj.get<object::map_type>().empty());
 }
 
 TEST(ObjectTest, basic_get_vector) {
@@ -352,7 +352,7 @@ TEST(ObjectTest, basic_value_constructor) {
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(double);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(long_double_t);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::string);
-	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(object::array_t);
+	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(object::array_type);
 
 	// const char*
 	{
@@ -503,7 +503,7 @@ TEST(ObjectTest, basic_set) {
 	OBJECT_BASIC_SET_TEST(obj, double);
 	OBJECT_BASIC_SET_TEST(obj, long_double_t);
 	OBJECT_BASIC_SET_TEST(obj, std::string);
-	OBJECT_BASIC_SET_TEST(obj, object::array_t);
+	OBJECT_BASIC_SET_TEST(obj, object::array_type);
 
 	// const char*
 	obj.set("");
@@ -664,7 +664,7 @@ TEST(ObjectTest, basic_assignment_operator) {
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, double);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, long_double_t);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::string);
-	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, object::array_t);
+	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, object::array_type);
 
 	// const char*
 	obj = "";
@@ -805,7 +805,7 @@ TEST(ObjectTest, basic_assignment_operator_unordered_multiset) {
 
 /** basic_access_operator */
 
-TEST(ObjectTest, basic_access_operator) {
+TEST(ObjectTest, basic_map_access_operator) {
 	object obj;
 
 	obj["test"] = 1234;
@@ -819,6 +819,26 @@ TEST(ObjectTest, basic_access_operator) {
 	obj["test2"] = 1234;
 	EXPECT_EQ(obj["test"].get<int>(), 4567);
 	EXPECT_EQ(obj["test2"].get<int>(), 1234);
+}
+
+TEST(ObjectTest, basic_array_access_operator) {
+	object obj;
+
+	obj[0] = 1234;
+	EXPECT_EQ(obj.size(), 1);
+	EXPECT_EQ(obj[0].get<int>(), 1234);
+	EXPECT_EQ(obj[1].get<int>(), 0);
+	EXPECT_EQ(obj.size(), 2);
+
+	obj[0] = 4567;
+	EXPECT_EQ(obj[0].get<int>(), 4567);
+	EXPECT_EQ(obj[1].get<int>(), 0);
+	EXPECT_EQ(obj.size(), 2);
+
+	obj[1] = 1234;
+	EXPECT_EQ(obj[0].get<int>(), 4567);
+	EXPECT_EQ(obj[1].get<int>(), 1234);
+	EXPECT_EQ(obj.size(), 2);
 }
 
 /** end basic tests */

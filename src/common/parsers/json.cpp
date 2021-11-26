@@ -406,7 +406,7 @@ object read_json_object(std::string_view& in_data) {
 				advance_whitespace(in_data);
 
 				// Build and populate result
-				object result{ object::map_t{} };
+				object result{ object::map_type{} };
 				while (true) {
 					if (in_data.empty()) {
 						throw std::invalid_argument{ "Invalid JSON data; unexpected end of data when parsing object map" };
@@ -473,8 +473,8 @@ object json_parser::deserialize(std::string_view in_data) {
 }
 
 std::string json_parser::serialize(const object& in_object) {
-	static const object::array_t s_null_array;
-	static const object::map_t s_null_map;
+	static const object::array_type s_null_array;
+	static const object::map_type s_null_map;
 
 	switch (in_object.type()) {
 		case object::type::null:
@@ -504,7 +504,7 @@ std::string json_parser::serialize(const object& in_object) {
 			result = '[';
 
 			// Serialize all objects in array
-			for (auto& obj : in_object.get<object::array_t>(s_null_array)) {
+			for (auto& obj : in_object.get<object::array_type>(s_null_array)) {
 				result += json_parser::serialize(obj);
 				result += ',';
 			}
@@ -523,7 +523,7 @@ std::string json_parser::serialize(const object& in_object) {
 			result = '{';
 
 			// Serialize all objects in map
-			for (auto& item : in_object.get<object::map_t>(s_null_map)) {
+			for (auto& item : in_object.get<object::map_type>(s_null_map)) {
 				result += make_json_string(item.first);
 				result += ":"sv;
 				result += json_parser::serialize(item.second);

@@ -30,8 +30,11 @@ namespace jessilib {
 
 class object {
 public:
-	using array_t = std::vector<object>;
-	using map_t = std::map<std::string, object>;
+	using array_type = std::vector<object>;
+	using string_type = std::string;
+	using string_view_type = std::string_view;
+	using map_type = std::map<string_type, object>;
+	using index_type = std::size_t;
 
 	/** is_backing */
 
@@ -59,21 +62,21 @@ public:
 	};
 
 	template<typename T>
-	struct is_backing<T, typename std::enable_if<std::is_same<T, std::string>::value>::type> {
+	struct is_backing<T, typename std::enable_if<std::is_same<T, string_type>::value>::type> {
 		static constexpr bool value = true;
-		using type = std::string;
+		using type = string_type;
 	};
 
 	template<typename T>
 	struct is_backing<T, typename std::enable_if<is_sequence_container<T>::value>::type> {
 		static constexpr bool value = true;
-		using type = array_t;
+		using type = array_type;
 	};
 
 	template<typename T>
 	struct is_backing<T, typename std::enable_if<is_associative_container<T>::value>::type> {
-		static constexpr bool value = std::is_same<typename is_associative_container<T>::key_type, std::string>::value;
-		using type = map_t;
+		static constexpr bool value = std::is_same<typename is_associative_container<T>::key_type, string_type>::value;
+		using type = map_type;
 	};
 
 	/** type */
@@ -83,7 +86,7 @@ public:
 		boolean,
 		integer,
 		decimal,
-		string, // TODO: consider separating into 'binary' (std::vector<std::byte>) and 'text' (std::string) types
+		string, // TODO: consider separating into 'binary' (std::vector<std::byte>) and 'text' (string_type) types
 		array,
 		map
 	};
@@ -98,7 +101,7 @@ public:
 	template<typename T,
 		typename std::enable_if<is_backing<typename std::decay<T>::type>::value
 		&& !is_sequence_container<typename std::decay<T>::type>::value
-		&& (!is_associative_container<typename std::decay<T>::type>::value || std::is_same<typename remove_cvref<T>::type, map_t>::value)>::type* = nullptr>
+		&& (!is_associative_container<typename std::decay<T>::type>::value || std::is_same<typename remove_cvref<T>::type, map_type>::value)>::type* = nullptr>
 	object(T&& in_value)
 		: m_value{ typename is_backing<typename std::decay<T>::type>::type{ std::forward<T>(in_value) } } {
 		// Empty ctor body
@@ -108,7 +111,7 @@ public:
 		typename std::enable_if<is_sequence_container<typename std::decay<T>::type>::value
 		&& !std::is_same<typename std::decay<T>::type, std::vector<bool>>::value>::type* = nullptr>
 	object(T&& in_value)
-		: m_value{ array_t{ in_value.begin(), in_value.end() } } {
+		: m_value{ array_type{ in_value.begin(), in_value.end() } } {
 		// Empty ctor body
 	}
 
@@ -116,8 +119,8 @@ public:
 	template<typename T,
 		typename std::enable_if<std::is_same<typename std::decay<T>::type, std::vector<bool>>::value>::type* = nullptr>
 	object(T&& in_value)
-		: m_value{ array_t{} } {
-		auto& array = std::get<array_t>(m_value);
+		: m_value{ array_type{} } {
+		auto& array = std::get<array_type>(m_value);
 		array.reserve(in_value.size());
 
 		for (const auto& item : in_value) {
@@ -125,32 +128,32 @@ public:
 		}
 	}
 
-	// std::unordered_map<std::string, object>
+	// std::unordered_map<string_type, object>
 	template<typename T,
 		typename std::enable_if<is_unordered_map<typename std::decay<T>::type>::value
-			&& std::is_same<typename is_unordered_map<typename std::decay<T>::type>::key_type, std::string>::value
+			&& std::is_same<typename is_unordered_map<typename std::decay<T>::type>::key_type, string_type>::value
 			&& std::is_same<typename is_unordered_map<typename std::decay<T>::type>::value_type, object>::value>::type* = nullptr>
 	object(T&& in_value)
-		: m_value{ map_t{ in_value.begin(), in_value.end() } } {
+		: m_value{ map_type{ in_value.begin(), in_value.end() } } {
 		// Empty ctor body
 	}
 
-	// Non-map_t associative containers (container<std::string, T>)
+	// Non-map_type associative containers (container<string_type, T>)
 	template<typename T,
 		typename std::enable_if<is_associative_container<typename remove_cvref<T>::type>::value
-			&& (std::is_convertible<typename is_associative_container<typename remove_cvref<T>::type>::key_type, std::string>::value
-			|| std::is_convertible<typename is_associative_container<typename remove_cvref<T>::type>::key_type, std::string_view>::value)
+			&& (std::is_convertible<typename is_associative_container<typename remove_cvref<T>::type>::key_type, string_type>::value
+			|| std::is_convertible<typename is_associative_container<typename remove_cvref<T>::type>::key_type, string_view_type>::value)
 			&& !std::is_same<typename is_associative_container<typename remove_cvref<T>::type>::value_type, object>::value>::type* = nullptr>
 	object(T&& in_value)
-		: m_value{ map_t{} } {
-		auto& map = std::get<map_t>(m_value);
+		: m_value{ map_type{} } {
+		auto& map = std::get<map_type>(m_value);
 		for (auto& pair : in_value) {
 			map.emplace(pair.first, pair.second);
 		}
 	}
 
 	object(const char* in_str);
-	object(const std::string_view& in_str);
+	object(const string_view_type& in_str);
 
 	// Comparison operators
 	bool operator==(const object& rhs) const {
@@ -189,8 +192,10 @@ public:
 		return *this;
 	}
 
-	const object& operator[](const std::string& in_key) const;
-	object& operator[](const std::string& in_key);
+	const object& operator[](const string_type& in_key) const;
+	object& operator[](const string_type& in_key);
+	const object& operator[](index_type in_index) const;
+	object& operator[](index_type in_index);
 
 	/** Accessors */
 
@@ -226,9 +231,9 @@ public:
 
 	// TODO: support other basic_string types
 	template<typename T, typename DefaultT = T,
-		typename std::enable_if<std::is_same<T, std::string>::value && std::is_convertible<typename std::decay<DefaultT>::type, T>::value>::type* = nullptr>
+		typename std::enable_if<std::is_same<T, string_type>::value && std::is_convertible<typename std::decay<DefaultT>::type, T>::value>::type* = nullptr>
 	T get(DefaultT&& in_default_value = {}) const {
-		const std::string* result = std::get_if<std::string>(&m_value);
+		const string_type* result = std::get_if<string_type>(&m_value);
 		if (result != nullptr) {
 			return *result;
 		}
@@ -238,9 +243,9 @@ public:
 
 	// TODO: support other basic_string_view types
 	template<typename T, typename DefaultT = T,
-		typename std::enable_if<std::is_same<T, std::string>::value && std::is_same<typename std::decay<DefaultT>::type, std::string_view>::value>::type* = nullptr>
+		typename std::enable_if<std::is_same<T, string_type>::value && std::is_same<typename std::decay<DefaultT>::type, string_view_type>::value>::type* = nullptr>
 	T get(DefaultT&& in_default_value) const {
-		const std::string* result = std::get_if<std::string>(&m_value);
+		const string_type* result = std::get_if<string_type>(&m_value);
 		if (result != nullptr) {
 			return *result;
 		}
@@ -250,11 +255,11 @@ public:
 
 	/** arrays */
 
-	// reference getter (array_t)
+	// reference getter (array_type)
 	template<typename T,
-		typename std::enable_if<std::is_same<T, array_t>::value>::type* = nullptr>
+		typename std::enable_if<std::is_same<T, array_type>::value>::type* = nullptr>
 	const T& get(const T& in_default_value) const {
-		const array_t* result = std::get_if<array_t>(&m_value);
+		const array_type* result = std::get_if<array_type>(&m_value);
 		if (result != nullptr) {
 			return *result;
 		}
@@ -262,11 +267,11 @@ public:
 		return in_default_value;
 	}
 
-	// copy getter (array_t)
+	// copy getter (array_type)
 	template<typename T,
-		typename std::enable_if<std::is_same<T, array_t>::value>::type* = nullptr>
+		typename std::enable_if<std::is_same<T, array_type>::value>::type* = nullptr>
 	T get(T&& in_default_value = {}) const {
-		const array_t* result = std::get_if<array_t>(&m_value);
+		const array_type* result = std::get_if<array_type>(&m_value);
 		if (result != nullptr) {
 			return *result;
 		}
@@ -274,13 +279,13 @@ public:
 		return std::move(in_default_value);
 	}
 
-	// conversion getter (non-array_t)
+	// conversion getter (non-array_type)
 	template<typename T, typename DefaultT = T,
-		typename std::enable_if<is_sequence_container<T>::value && !std::is_same<T, array_t>::value && std::is_same<typename std::decay<DefaultT>::type, T>::value>::type* = nullptr>
+		typename std::enable_if<is_sequence_container<T>::value && !std::is_same<T, array_type>::value && std::is_same<typename std::decay<DefaultT>::type, T>::value>::type* = nullptr>
 	T get(DefaultT&& in_default_value = {}) const {
 		using backing_t = typename is_sequence_container<T>::type;
 
-		const array_t* array = std::get_if<array_t>(&m_value);
+		const array_type* array = std::get_if<array_type>(&m_value);
 		if (array != nullptr) {
 			T result;
 			// Expand capacity to fit values (if possible)
@@ -338,13 +343,13 @@ public:
 
 	/** maps */
 
-	// TODO: implement in a way that does not require exposing map_t
+	// TODO: implement in a way that does not require exposing map_type
 
-	// reference getter (map_t)
+	// reference getter (map_type)
 	template<typename T,
-		typename std::enable_if<std::is_same<T, map_t>::value>::type* = nullptr>
+		typename std::enable_if<std::is_same<T, map_type>::value>::type* = nullptr>
 	const T& get(const T& in_default_value) const {
-		const map_t* result = std::get_if<map_t>(&m_value);
+		const map_type* result = std::get_if<map_type>(&m_value);
 		if (result != nullptr) {
 			return *result;
 		}
@@ -352,11 +357,11 @@ public:
 		return in_default_value;
 	}
 
-	// copy getter (map_t)
+	// copy getter (map_type)
 	template<typename T,
-		typename std::enable_if<std::is_same<T, map_t>::value>::type* = nullptr>
+		typename std::enable_if<std::is_same<T, map_type>::value>::type* = nullptr>
 	T get(T&& in_default_value = {}) const {
-		const map_t* result = std::get_if<map_t>(&m_value);
+		const map_type* result = std::get_if<map_type>(&m_value);
 		if (result != nullptr) {
 			return *result;
 		}
@@ -364,7 +369,7 @@ public:
 		return std::move(in_default_value);
 	}
 
-	// TODO: conversion getter (non-map_t, i.e: unordered_map)
+	// TODO: conversion getter (non-map_type, i.e: unordered_map)
 
 	/** set */
 
@@ -379,39 +384,39 @@ public:
 
 	// string
 	template<typename T,
-		typename std::enable_if<std::is_convertible<typename std::decay<T>::type, std::string>::value>::type* = nullptr>
+		typename std::enable_if<std::is_convertible<typename std::decay<T>::type, string_type>::value>::type* = nullptr>
 	void set(T&& in_value) {
-		m_value.emplace<std::string>(std::forward<T>(in_value));
+		m_value.emplace<string_type>(std::forward<T>(in_value));
 	}
 
 	// string_view
 	template<typename T,
-		typename std::enable_if<std::is_same<T, std::string_view>::value>::type* = nullptr>
+		typename std::enable_if<std::is_same<T, string_view_type>::value>::type* = nullptr>
 	void set(const T& in_value) {
-		m_value.emplace<std::string>(in_value.begin(), in_value.end());
+		m_value.emplace<string_type>(in_value.begin(), in_value.end());
 	}
 
-	// array_t
+	// array_type
 	template<typename T,
-		typename std::enable_if<std::is_same<typename std::decay<T>::type, array_t>::value>::type* = nullptr>
+		typename std::enable_if<std::is_same<typename std::decay<T>::type, array_type>::value>::type* = nullptr>
 	void set(T&& in_value) {
-		m_value.emplace<array_t>(std::forward<T>(in_value));
+		m_value.emplace<array_type>(std::forward<T>(in_value));
 	}
 
 	// is_sequence_container
 	template<typename T,
 		typename std::enable_if<is_sequence_container<typename std::decay<T>::type>::value
-		&& !std::is_same<typename std::decay<T>::type, array_t>::value
+		&& !std::is_same<typename std::decay<T>::type, array_type>::value
 		&& !std::is_same<typename std::decay<T>::type, std::vector<bool>>::value>::type* = nullptr>
 	void set(T&& in_value) {
-		m_value.emplace<array_t>(in_value.begin(), in_value.end());
+		m_value.emplace<array_type>(in_value.begin(), in_value.end());
 	}
 
 	// std::vector<bool>
 	template<typename T,
 		typename std::enable_if<std::is_same<typename std::decay<T>::type, std::vector<bool>>::value>::type* = nullptr>
 	void set(T&& in_value) {
-		auto& array = m_value.emplace<array_t>();
+		auto& array = m_value.emplace<array_type>();
 		array.reserve(in_value.size());
 
 		for (const auto& item : in_value) {
@@ -433,7 +438,7 @@ public:
 			if constexpr (std::is_same<T, null_variant_t>::value) {
 				return 0;
 			}
-			else if constexpr (std::is_same<T, array_t>::value) {
+			else if constexpr (std::is_same<T, array_type>::value) {
 				size_t result{};
 				for (auto& obj : value) {
 					result += obj.hash();
@@ -441,10 +446,10 @@ public:
 
 				return result;
 			}
-			else if constexpr (std::is_same<T, map_t>::value) {
+			else if constexpr (std::is_same<T, map_type>::value) {
 				size_t result{};
 				for (auto& pair : value) {
-					result += std::hash<std::string>{}(pair.first);
+					result += std::hash<string_type>{}(pair.first);
 				}
 
 				return result;
@@ -457,7 +462,16 @@ public:
 
 private:
 	using null_variant_t = void*;
-	std::variant<null_variant_t, bool, intmax_t, long double, std::string, array_t, map_t> m_value;
+	// TODO: consider replacing std::string with std::u8string (for strings) & std::vector<unsigned char> (for data)
+	// TODO: consider some more generic mechanism for underlying string type, to support utf-16 & utf-32 strings
+	std::variant<null_variant_t, bool, intmax_t, long double, string_type, array_type, map_type> m_value;
+
+	// TODO: note for future self, just use either first or last element in array_type to hold XML attributes
+	// OR, have every XML tag objects be a map, with all subobjects being in a "__values" array subobject or such
+	// For extra syntactical sugar, could have xml_object class extend object w/o additional members to allow arbitrary
+	// static_cast usage
+	// This may be a good justification for separate 'xml_config' and 'xml' parsers, as config files are easier to
+	// represent as a map, whereas an actual xml document is sequenced
 }; // object
 
 } // namespace jessilib

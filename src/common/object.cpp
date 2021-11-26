@@ -29,12 +29,12 @@ object::object(object&& in_object) {
 }
 
 object::object(const char* in_str)
-	: m_value{ std::string{ in_str } } {
+	: m_value{ string_type{ in_str } } {
 	// Empty ctor body
 }
 
-object::object(const std::string_view& in_str)
-	: m_value{ std::string{ in_str.begin(), in_str.end() } } {
+object::object(const string_view_type& in_str)
+	: m_value{ string_type{ in_str.begin(), in_str.end() } } {
 	// Empty ctor body
 }
 
@@ -52,7 +52,7 @@ size_t object::size() const {
 
 	// Try array
 	{
-		const array_t* array = std::get_if<array_t>(&m_value);
+		const array_type* array = std::get_if<array_type>(&m_value);
 		if (array != nullptr) {
 			return array->size();
 		}
@@ -60,7 +60,7 @@ size_t object::size() const {
 
 	// Try map
 	{
-		const map_t* map = std::get_if<map_t>(&m_value);
+		const map_type* map = std::get_if<map_type>(&m_value);
 		if (map != nullptr) {
 			return map->size();
 		}
@@ -70,11 +70,11 @@ size_t object::size() const {
 	return 1;
 }
 
-const object& object::operator[](const std::string& in_key) const {
-	auto result = std::get_if<map_t>(&m_value);
-	if (result != nullptr) {
-		auto itr = result->find(in_key);
-		if (itr != result->end()) {
+const object& object::operator[](const string_type& in_key) const {
+	auto map_ptr = std::get_if<map_type>(&m_value);
+	if (map_ptr != nullptr) {
+		auto itr = map_ptr->find(in_key);
+		if (itr != map_ptr->end()) {
 			return itr->second;
 		}
 	}
@@ -83,14 +83,44 @@ const object& object::operator[](const std::string& in_key) const {
 	return s_null_object;
 }
 
-object& object::operator[](const std::string& in_key) {
+object& object::operator[](const string_type& in_key) {
 	if (null()) {
-		return m_value.emplace<map_t>()[in_key];
+		return m_value.emplace<map_type>()[in_key];
 	}
 
-	auto result = std::get_if<map_t>(&m_value);
-	if (result != nullptr) {
-		return result->operator[](in_key);
+	auto map_ptr = std::get_if<map_type>(&m_value);
+	if (map_ptr != nullptr) {
+		return map_ptr->operator[](in_key);
+	}
+
+	static thread_local object s_null_object;
+	s_null_object.m_value.emplace<null_variant_t>();
+	return s_null_object;
+}
+
+const object& object::operator[](index_type in_index) const {
+	auto array_ptr = std::get_if<array_type>(&m_value);
+	if (array_ptr != nullptr
+		&& in_index < array_ptr->size()) {
+		return array_ptr->at(in_index);
+	}
+
+	static const object s_null_object;
+	return s_null_object;
+}
+
+object& object::operator[](index_type in_index) {
+	if (null()) {
+		m_value.emplace<array_type>();
+	}
+
+	auto array_ptr = std::get_if<array_type>(&m_value);
+	if (array_ptr != nullptr) {
+		while (array_ptr->size() <= in_index) {
+			array_ptr->emplace_back();
+		}
+
+		return array_ptr->at(in_index);
 	}
 
 	static thread_local object s_null_object;
