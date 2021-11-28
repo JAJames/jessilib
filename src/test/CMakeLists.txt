@@ -16,3 +16,8 @@ target_include_directories(jessilib_tests PRIVATE .)
 
 # Link with gtest
 target_link_libraries(jessilib_tests gtest gtest_main jessilib)
+
+# Also ensure JESSITEST_SRC_DIR is defined
+target_compile_definitions(jessilib_tests PRIVATE
+        JESSITEST_SRC_DIR="${CMAKE_CURRENT_SOURCE_DIR}/"
+        JESSITEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/")
