@@ -300,7 +300,7 @@ constexpr auto word_split_once(ItrT begin, EndT end, SpaceItrT in_whitespace_beg
 		++begin;
 	}
 
-	for (auto itr = begin; itr < end;) {
+	for (auto itr = begin; itr < end; ++itr) {
 		if (is_whitespace(*itr)) {
 			// in_whitespace found; word_split upon it
 			result.first = make_word_split_member<MemberT>(begin, itr);

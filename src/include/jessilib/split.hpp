@@ -249,7 +249,7 @@ constexpr auto split_once(ItrT begin, EndT end, DelimItrT in_delim_begin, DelimE
 	}
 
 	auto itr_end = end - (delim_length - 1);
-	for (auto itr = begin; itr < itr_end;) {
+	for (auto itr = begin; itr < itr_end; ++itr) {
 		if (std::equal(in_delim_begin, in_delim_end, itr)) {
 			// in_delim found; split upon it
 			result.first = make_split_member<MemberT>(begin, itr);
