@@ -217,17 +217,17 @@ inline bool equalsi(char32_t lhs, char32_t rhs) {
 	auto method(const std::basic_string<LhsCharT>& lhs, std::basic_string_view<RhsCharT> rhs) { \
 		return method(static_cast<std::basic_string_view<LhsCharT>>(lhs), rhs); } \
 	template<typename LhsCharT, typename RhsCharT> \
-	bool method(std::basic_string_view<LhsCharT> lhs, const std::basic_string<RhsCharT>& rhs) { \
+	auto method(std::basic_string_view<LhsCharT> lhs, const std::basic_string<RhsCharT>& rhs) { \
 		return method(lhs, static_cast<std::basic_string_view<RhsCharT>>(rhs)); } \
 	template<typename LhsCharT, typename RhsCharT> \
-	bool method(const std::basic_string<LhsCharT>& lhs, const std::basic_string<RhsCharT>& rhs) { \
+	auto method(const std::basic_string<LhsCharT>& lhs, const std::basic_string<RhsCharT>& rhs) { \
 		return method(static_cast<std::basic_string_view<LhsCharT>>(lhs), static_cast<std::basic_string_view<RhsCharT>>(rhs)); }
 
 /**
  * Checks if two strings are equal
  *
- * @tparam LhsCharT Unicode codepoint container type for left-hand parameter
- * @tparam RhsCharT Unicode codepoint container type for right-hand parameter
+ * @tparam LhsCharT Character type for left-hand parameter
+ * @tparam RhsCharT Character type for right-hand parameter
  * @param lhs First string to compare
  * @param rhs Second string to compare against
  * @return True if the strings are equal, false otherwise
@@ -267,8 +267,8 @@ ADAPT_BASIC_STRING(equals)
 /**
  * Checks if two strings are equal (case insensitive)
  *
- * @tparam LhsCharT Unicode codepoint container type for left-hand parameter
- * @tparam RhsCharT Unicode codepoint container type for right-hand parameter
+ * @tparam LhsCharT Character type for left-hand parameter
+ * @tparam RhsCharT Character type for right-hand parameter
  * @param lhs First string to compare
  * @param rhs Second string to compare against
  * @return True if the strings are equal, false otherwise
@@ -310,8 +310,8 @@ ADAPT_BASIC_STRING(equalsi)
 /**
  * Checks if a string starts with a substring
  *
- * @tparam LhsCharT Unicode codepoint container type for underlying string
- * @tparam RhsCharT Unicode codepoint container type for prefix string
+ * @tparam LhsCharT Character type for underlying string
+ * @tparam RhsCharT Character type for prefix string
  * @param in_string String to check for prefix
  * @param in_prefix Substring prefix to check for
  * @return Data length of in_prefix in terms of LhsCharT if in_string starts with in_prefix, 0 otherwise
@@ -360,15 +360,15 @@ ADAPT_BASIC_STRING(starts_with_length)
 /**
  * Checks if a string starts with a substring (case insensitive)
  *
- * @tparam LhsCharT Unicode codepoint container type for underlying string
- * @tparam RhsCharT Unicode codepoint container type for prefix string
+ * @tparam LhsCharT Character type for underlying string
+ * @tparam RhsCharT Character type for prefix string
  * @param in_string String to check for prefix
  * @param in_prefix Substring prefix to check for
  * @return Data length of in_prefix in terms of LhsCharT if in_string starts with in_prefix, 0 otherwise
  */
 template<typename LhsCharT, typename RhsCharT>
 size_t starts_with_lengthi(std::basic_string_view<LhsCharT> in_string, std::basic_string_view<RhsCharT> in_prefix) {
-	// If in_string and in_prefix are the same type, compare their sizes and quickly return if in_string is too small
+	// If in_string and in_prefix are the same type, skip decoding each point
 	if constexpr (std::is_same_v<LhsCharT, RhsCharT>) {
 		if (in_string.size() < in_prefix.size()) {
 			return 0;
@@ -410,8 +410,8 @@ ADAPT_BASIC_STRING(starts_with_lengthi)
 /**
  * Checks if a string starts with a substring
  *
- * @tparam LhsCharT Unicode codepoint container type for underlying string
- * @tparam RhsCharT Unicode codepoint container type for prefix string
+ * @tparam LhsCharT Character type for underlying string
+ * @tparam RhsCharT Character type for prefix string
  * @param in_string String to check for prefix
  * @param in_prefix Prefix to check for
  * @return True if both strings are valid and in_string starts with in_prefix, false otherwise
@@ -426,8 +426,8 @@ ADAPT_BASIC_STRING(starts_with)
 /**
  * Checks if a string starts with a substring (case insensitive)
  *
- * @tparam LhsCharT Unicode codepoint container type for underlying string
- * @tparam RhsCharT Unicode codepoint container type for prefix string
+ * @tparam LhsCharT Character type for underlying string
+ * @tparam RhsCharT Character type for prefix string
  * @param in_string String to check for prefix
  * @param in_prefix Prefix to check for
  * @return True if both strings are valid and in_string starts with in_prefix, false otherwise
@@ -438,6 +438,160 @@ bool starts_withi(std::basic_string_view<LhsCharT> in_string, std::basic_string_
 }
 
 ADAPT_BASIC_STRING(starts_withi)
+
+/**
+ * Searches a string for a specified substring
+ *
+ * @tparam LhsCharT Character type of the string being searched
+ * @tparam RhsCharT Character type of the substring being searched for
+ * @param in_string String to search
+ * @param in_substring Substring to search for
+ * @return Character data index on success, npos otherwise
+ */
+template<typename LhsCharT, bool CaseSensitive = true>
+size_t find(std::basic_string_view<LhsCharT> in_string, char32_t in_codepoint) {
+	// If we don't have anything to search through, there's nothing to be found
+	if (in_string.empty()) {
+		return decltype(in_string)::npos;
+	}
+
+	if constexpr (!CaseSensitive) {
+		in_codepoint = fold(in_codepoint);
+	}
+
+	size_t codepoints_removed{};
+	while (!in_string.empty()) {
+		std::basic_string_view<LhsCharT> string = in_string;
+		get_endpoint_result string_front = decode_codepoint(string);
+
+		if (string_front.units == 0) {
+			// Failed to decode front codepoint; bad unicode sequence
+			return decltype(in_string)::npos;
+		}
+
+		if constexpr (CaseSensitive) {
+			if (string_front.codepoint == in_codepoint) {
+				// Match found!
+				return codepoints_removed;
+			}
+		}
+		else {
+			if (fold(string_front.codepoint) == in_codepoint) {
+				// Match found!
+				return codepoints_removed;
+			}
+		}
+
+		// Didn't find a match here; remove the front codepoint and try the next position
+		in_string.remove_prefix(string_front.units);
+		codepoints_removed += string_front.units;
+	}
+
+	// We reached the end of in_string before finding the prefix :(
+	return decltype(in_string)::npos;
+}
+
+/**
+ * Searches a string for a specified substring
+ *
+ * @tparam LhsCharT Character type of the string being searched
+ * @tparam RhsCharT Character type of the substring being searched for
+ * @param in_string String to search
+ * @param in_substring Substring to search for
+ * @return Character data index on success, npos otherwise
+ */
+template<typename LhsCharT, typename RhsCharT, bool CaseSensitive = true>
+size_t find(std::basic_string_view<LhsCharT> in_string, std::basic_string_view<RhsCharT> in_substring) {
+	// If we're searching for nothing, then we've found it at the front
+	if (in_substring.empty()) {
+		return 0;
+	}
+
+	// If we don't have anything to search through, there's nothing to be found
+	if (in_string.empty()) {
+		return decltype(in_string)::npos;
+	}
+
+	// TODO: expand this to cover any instance where in_substring is a single codepoint, rather than a single data unit
+	if (in_substring.size() == 1) {
+		return find<LhsCharT, CaseSensitive>(in_string, in_substring[0]);
+	}
+
+	// TODO: optimize for when in_substring is small and of different type, by only decoding it once
+
+	size_t codepoints_removed{};
+	while (!in_string.empty()) {
+		// If in_string and in_prefix are the same type, compare their sizes and quickly return if in_string is too small
+		if constexpr (std::is_same_v<LhsCharT, RhsCharT>) {
+			if (in_string.size() < in_substring.size()) {
+				return decltype(in_string)::npos;
+			}
+		}
+
+		std::basic_string_view<LhsCharT> string = in_string;
+		std::basic_string_view<RhsCharT> substring = in_substring;
+		get_endpoint_result string_front;
+		do {
+			// TODO: optimize this for when in_string and in_substring are same type, by only decoding in_string, solely
+			// to determine number of data units to compare
+			string_front = decode_codepoint(string);
+			get_endpoint_result prefix_front = decode_codepoint(substring);
+
+			if (string_front.units == 0
+				|| prefix_front.units == 0) {
+				// Failed to decode front codepoint; bad unicode sequence
+				return decltype(in_string)::npos;
+			}
+
+			if constexpr (CaseSensitive) {
+				if (string_front.codepoint != prefix_front.codepoint) {
+					// Codepoints aren't the same; break & try next position
+					break;
+				}
+			}
+			else {
+				if (!equalsi(string_front.codepoint, prefix_front.codepoint)) {
+					// Codepoints don't fold the same; break & try next position
+					break;
+				}
+			}
+
+			// Codepoints are equal; trim off the fronts and continue
+			string.remove_prefix(string_front.units);
+			substring.remove_prefix(prefix_front.units);
+
+			if (substring.empty()) {
+				// We found the substring! We can return our current position
+				return codepoints_removed;
+			}
+		} while (!string.empty());
+
+		// Didn't find a match here; remove the front codepoint and try the next position
+		in_string.remove_prefix(string_front.units);
+		codepoints_removed += string_front.units;
+	}
+
+	// We reached the end of in_string before finding the prefix :(
+	return decltype(in_string)::npos;
+}
+
+ADAPT_BASIC_STRING(find)
+
+/**
+ * Searches a string for a specified substring
+ *
+ * @tparam LhsCharT Character type of the string being searched
+ * @tparam RhsCharT Character type of the substring being searched for
+ * @param in_string String to search
+ * @param in_substring Substring to search for
+ * @return Character data index on success, npos otherwise
+ */
+template<typename LhsCharT, typename RhsCharT>
+size_t findi(std::basic_string_view<LhsCharT> in_string, std::basic_string_view<RhsCharT> in_substring) {
+	return find<LhsCharT, RhsCharT, false>(in_string, in_substring);
+}
+
+ADAPT_BASIC_STRING(findi)
 
 /** to_lower / to_upper */
 //char32_t to_lower(char32_t in_chr); // TODO: implement
