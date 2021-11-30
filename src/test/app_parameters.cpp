@@ -275,7 +275,7 @@ TEST(AppParametersTest, switch_and_value) {
 	EXPECT_EQ(obj["Switches"], expected_switches);
 	EXPECT_EQ(obj["Values"], expected_values);
 
-	EXPECT_TRUE(parameters.hasSwitch("switch"));
-	EXPECT_FALSE(parameters.hasSwitch("switch2"));
-	EXPECT_EQ(parameters.getValue("key"), "value");
+	EXPECT_TRUE(parameters.has_switch("switch"));
+	EXPECT_FALSE(parameters.has_switch("switch2"));
+	EXPECT_EQ(parameters.get_value("key"), "value");
 }
