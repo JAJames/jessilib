@@ -130,16 +130,16 @@ object app_parameters::as_object() const {
 	};
 }
 
-bool app_parameters::hasSwitch(std::string_view in_switch) const {
+bool app_parameters::has_switch(std::string_view in_switch) const {
 	return m_switches_set.find(in_switch) != m_switches_set.end();
 }
 
-std::string_view app_parameters::getValue(std::string_view in_key) const {
+std::string_view app_parameters::get_value(std::string_view in_key, std::string_view in_default) const {
 	auto result = m_values.find(in_key);
 
 	// Safety check
 	if (result == m_values.end()) {
-		return {};
+		return in_default;
 	}
 
 	return result->second;

@@ -27,6 +27,7 @@
 
 #include <string_view>
 #include <vector>
+#include <tuple>
 
 namespace jessilib {
 

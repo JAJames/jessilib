@@ -32,8 +32,8 @@ public:
 	const std::unordered_map<std::string_view, std::string>& values() const;
 	jessilib::object as_object() const;
 
-	bool hasSwitch(std::string_view in_switch) const;
-	std::string_view getValue(std::string_view in_key) const;
+	bool has_switch(std::string_view in_switch) const;
+	std::string_view get_value(std::string_view in_key, std::string_view in_default = {}) const;
 
 	operator jessilib::object() const { return as_object(); }
 
