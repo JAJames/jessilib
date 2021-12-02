@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2018 Jessica James.
+ * Copyright (C) 2018-2021 Jessica James.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -49,6 +49,23 @@ size_t encode_codepoint(std::basic_ostream<char>& out_stream, char32_t in_codepo
 size_t encode_codepoint(std::basic_ostream<char8_t>& out_stream, char32_t in_codepoint);
 size_t encode_codepoint(std::basic_ostream<char16_t>& out_stream, char32_t in_codepoint);
 size_t encode_codepoint(std::basic_ostream<char32_t>& out_stream, char32_t in_codepoint);
+
+/**
+ * Encodes a codepoint directly to a character buffer
+ * Note: Do not use this without careful consideration; note the size requirements:
+ * 1) char8_t may write up to 4 elements
+ * 2) char16_t may write up to 2 elements
+ * 3) char32_t may write up to 1 element
+ * 4) char may write up to 4 elements; provided solely for compatibility/ease of use
+ *
+ * @param out_buffer Character buffer to write to
+ * @param in_codepoint Codepoint to encode
+ * @return Number of data elements written to out_buffer
+ */
+size_t encode_codepoint(char* out_buffer, char32_t in_codepoint);
+size_t encode_codepoint(char8_t* out_buffer, char32_t in_codepoint);
+size_t encode_codepoint(char16_t* out_buffer, char32_t in_codepoint);
+size_t encode_codepoint(char32_t* out_buffer, char32_t in_codepoint);
 
 /**
  * Encodes a codepoint and returns it as a string
@@ -109,9 +126,57 @@ get_endpoint_result decode_surrogate_pair(char16_t in_high_surrogate, char16_t i
 
 /** Utilities */
 
+namespace impl_unicode {
+
+// Add a narrower version in type_traits.hpp if this is needed elsewhere
+template<typename T>
+struct is_string : std::false_type {};
+
+template<typename T>
+struct is_string<std::basic_string<T>> {
+	using type = T;
+	static constexpr bool value{ true };
+	constexpr operator bool() const noexcept { return true; }
+	constexpr bool operator()() const noexcept { return true; }
+};
+
+template<typename T>
+struct is_string<std::basic_string_view<T>> {
+	using type = T;
+	static constexpr bool value{ true };
+	constexpr operator bool() const noexcept { return true; }
+	constexpr bool operator()() const noexcept { return true; }
+};
+
+template<typename T>
+struct is_string<T*> {
+	using type = T;
+	static constexpr bool value{ true };
+	constexpr operator bool() const noexcept { return true; }
+	constexpr bool operator()() const noexcept { return true; }
+};
+
+template<typename T>
+struct is_string<T[]> {
+	using type = T;
+	static constexpr bool value{ true };
+	constexpr operator bool() const noexcept { return true; }
+	constexpr bool operator()() const noexcept { return true; }
+};
+
+template<typename T, size_t N>
+struct is_string<T[N]> {
+	using type = T;
+	static constexpr bool value{ true };
+	constexpr operator bool() const noexcept { return true; }
+	constexpr bool operator()() const noexcept { return true; }
+};
+
+} // namespace impl_unicode
+
 template<typename InT>
 bool is_valid(const InT& in_string) {
-	using InCharT = typename InT::value_type;
+	using InCharT = typename impl_unicode::is_string<InT>::type;
 	using InViewT = std::basic_string_view<InCharT>;
 
 	InViewT in_string_view = static_cast<InViewT>(in_string);
@@ -137,7 +202,7 @@ bool is_valid(const InT& in_string) {
  */
 template<typename OutCharT, typename InT>
 std::basic_string_view<OutCharT> string_view_cast(const InT& in_string) {
-	using InCharT = typename InT::value_type;
+	using InCharT = typename impl_unicode::is_string<InT>::type;
 	size_t in_string_bytes = in_string.size() * sizeof(InCharT);
 	if constexpr (sizeof(OutCharT) > sizeof(InCharT)) {
 		// The output type is larger than the input type; verify no partial codepoints
@@ -161,7 +226,8 @@ std::basic_string_view<OutCharT> string_view_cast(const InT& in_string) {
 
 template<typename OutCharT, typename InT>
 std::basic_string<OutCharT> string_cast(const InT& in_string) {
-	using InCharT = typename InT::value_type;
+	static_assert(impl_unicode::is_string<InT>::value == true);
+	using InCharT = typename impl_unicode::is_string<InT>::type;
 	using InViewT = std::basic_string_view<InCharT>;
 	std::basic_string<OutCharT> result;
 
@@ -196,11 +262,12 @@ std::basic_string<OutCharT> string_cast(const InT& in_string) {
 	return result;
 }
 
-/** single-unit case folding utilities */
-char32_t fold(char32_t in_codepoint); // Folds codepoint for case insensitive checks (not for human output)
+/** single-unit helper utilities */
+char32_t fold(char32_t in_codepoint); // Folds codepoint for case-insensitive checks (not for human output)
+int as_base(char32_t in_character, unsigned int base); // The value represented by in_character in terms of base if valid, -1 otherwise
 
 /**
- * Checks if two codepoints are equal to eachother (case insensitive)
+ * Checks if two codepoints are equal to each-other (case insensitive)
  *
  * @param lhs First codepoint to compare
  * @param rhs Second codepoint to compare
@@ -592,6 +659,38 @@ size_t findi(std::basic_string_view<LhsCharT> in_string, std::basic_string_view<
 }
 
 ADAPT_BASIC_STRING(findi)
+
+using find_if_predicate_type = bool(*)(char32_t, char*, size_t);
+inline void find_if(std::basic_string<char>& in_string, find_if_predicate_type in_predicate) {
+	using CharT = char;
+	CharT* ptr = in_string.data();
+	std::basic_string_view<CharT> in_string_view = in_string;
+	for (auto decode = decode_codepoint(in_string_view); decode.units != 0; decode = decode_codepoint(in_string_view)) {
+		if (in_predicate(decode.codepoint, ptr, decode.units)) {
+			// predicate indicates it's found what it's looking for, cool
+			return;
+		}
+
+		in_string_view.remove_prefix(decode.units);
+		ptr += decode.units;
+	}
+}
+
+using find_if_view_predicate_type = bool(*)(char32_t, const char*, size_t);
+inline void find_if(std::basic_string_view<char>& in_string, find_if_view_predicate_type in_predicate) {
+	using CharT = char;
+	const CharT* ptr = in_string.data();
+	std::basic_string_view<CharT> in_string_view = in_string;
+	for (auto decode = decode_codepoint(in_string_view); decode.units != 0; decode = decode_codepoint(in_string_view)) {
+		if (in_predicate(decode.codepoint, ptr, decode.units)) {
+			// predicate indicates it's found what it's looking for, cool
+			return;
+		}
+
+		in_string_view.remove_prefix(decode.units);
+		ptr += decode.units;
+	}
+}
 
 /** to_lower / to_upper */
 //char32_t to_lower(char32_t in_chr); // TODO: implement

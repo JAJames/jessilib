@@ -32,6 +32,12 @@ void append_helper(std::basic_ostream<T>& out_string, T in_value) {
 	out_string << in_value;
 }
 
+template<typename T>
+void append_helper(T*& out_string, T in_value) {
+	*out_string = in_value;
+	++out_string;
+}
+
 template<typename T, typename CharT>
 size_t encode_codepoint_utf8(T& out_destination, char32_t in_codepoint) {
 	if (in_codepoint > 0x10FFFF) {
@@ -96,6 +102,8 @@ size_t encode_codepoint_utf32(T& out_destination, char32_t in_codepoint) {
 	return 1;
 }
 
+/** Strings */
+
 size_t encode_codepoint(std::string& out_string, char32_t in_codepoint) {
 	return encode_codepoint_utf8<std::string, char>(out_string, in_codepoint);
 }
@@ -112,6 +120,8 @@ size_t encode_codepoint(std::u32string& out_string, char32_t in_codepoint) {
 	return encode_codepoint_utf32(out_string, in_codepoint);
 }
 
+/** Streams */
+
 size_t encode_codepoint(std::basic_ostream<char>& out_stream, char32_t in_codepoint) {
 	return encode_codepoint_utf8<std::basic_ostream<char>, char>(out_stream, in_codepoint);
 }
@@ -127,6 +137,26 @@ size_t encode_codepoint(std::basic_ostream<char16_t>& out_stream, char32_t in_co
 size_t encode_codepoint(std::basic_ostream<char32_t>& out_stream, char32_t in_codepoint) {
 	return encode_codepoint_utf32(out_stream, in_codepoint);
 }
+
+/** Pointers */
+
+size_t encode_codepoint(char* out_buffer, char32_t in_codepoint) {
+	return encode_codepoint_utf8<decltype(out_buffer), char>(out_buffer, in_codepoint);
+}
+
+size_t encode_codepoint(char8_t* out_buffer, char32_t in_codepoint) {
+	return encode_codepoint_utf8<decltype(out_buffer), char8_t>(out_buffer, in_codepoint);
+}
+
+size_t encode_codepoint(char16_t* out_buffer, char32_t in_codepoint) {
+	return encode_codepoint_utf16(out_buffer, in_codepoint);
+}
+
+size_t encode_codepoint(char32_t* out_buffer, char32_t in_codepoint) {
+	return encode_codepoint_utf32(out_buffer, in_codepoint);
+}
+
+/** Allocating */
 
 std::u8string encode_codepoint_u8(char32_t in_codepoint) {
 	std::u8string result;
@@ -517,6 +547,26 @@ char32_t fold(char32_t in_codepoint) {
 	}
 
 	return match->fold(in_codepoint);
+}
+
+const unsigned char base_table[]{
+	127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+	127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 127, 127, 127, 127, 127, 127,
+	127, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 127, 127, 127, 127, 127,
+	127, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 127, 127, 127, 127, 127,
+};
+
+int as_base(char32_t in_character, unsigned int base) {
+	if (in_character >= sizeof(base_table)) {
+		return -1;
+	}
+
+	unsigned int result = base_table[in_character];
+	if (result >= base) {
+		return -1;
+	}
+
+	return base_table[in_character];
 }
 
 } // namespace jessilib

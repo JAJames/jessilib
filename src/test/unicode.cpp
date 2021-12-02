@@ -135,20 +135,10 @@ public:
 };
 TYPED_TEST_SUITE(UnicodeFullTest, char_type_combos);
 
-template<typename CharT, size_t InLength>
-std::basic_string<CharT> make_str(const char32_t (&in_str)[InLength]) {
-	std::basic_string<CharT> result;
-	auto in_str_end = std::end(in_str) - 1; // ignore null terminator
-	for (auto itr = std::begin(in_str); itr != in_str_end; ++itr) {
-		jessilib::encode_codepoint(result, *itr);
-	}
-	return result;
-}
-
 /** string_cast */
 
 TYPED_TEST(UnicodeFullTest, string_cast) {
-	auto abcd_str = make_str<typename TypeParam::first_type>(U"ABCD");
+	auto abcd_str = jessilib::string_cast<typename TypeParam::first_type>(U"ABCD");
 	std::basic_string_view<typename TypeParam::first_type> abcd_string_view = abcd_str;
 
 	EXPECT_TRUE(equals(abcd_str,
@@ -161,7 +151,7 @@ TYPED_TEST(UnicodeFullTest, string_cast) {
 }
 
 TEST(UTF8Test, string_view_cast) {
-	auto abcd_str = make_str<char8_t>(U"ABCD");
+	auto abcd_str = jessilib::string_cast<char8_t>(U"ABCD");
 	auto view = string_view_cast<char>(abcd_str);
 	EXPECT_TRUE(equals(view, abcd_str));
 }
@@ -170,219 +160,219 @@ TEST(UTF8Test, string_view_cast) {
 
 TYPED_TEST(UnicodeFullTest, equals) {
 	// TypeParam::first_type == TypeParam::second_type
-	EXPECT_TRUE(equals(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_TRUE(equals(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_FALSE(equals(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_FALSE(equals(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_FALSE(equals(make_str<typename TypeParam::first_type>(U"ABcd"),
-		make_str<typename TypeParam::second_type>(U"abCD")));
+	EXPECT_TRUE(equals(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_TRUE(equals(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_FALSE(equals(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_FALSE(equals(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_FALSE(equals(jessilib::string_cast<typename TypeParam::first_type>(U"ABcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abCD")));
 }
 
 /** equalsi */
 
 TYPED_TEST(UnicodeFullTest, equalsi) {
 	// TypeParam::first_type == TypeParam::second_type
-	EXPECT_TRUE(equalsi(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_TRUE(equalsi(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_TRUE(equalsi(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_TRUE(equalsi(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_TRUE(equalsi(make_str<typename TypeParam::first_type>(U"ABcd"),
-		make_str<typename TypeParam::second_type>(U"abCD")));
+	EXPECT_TRUE(equalsi(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_TRUE(equalsi(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_TRUE(equalsi(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_TRUE(equalsi(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_TRUE(equalsi(jessilib::string_cast<typename TypeParam::first_type>(U"ABcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abCD")));
 }
 
 /** starts_with */
 
 TYPED_TEST(UnicodeFullTest, starts_with) {
 	// TypeParam::first_type == TypeParam::second_type
-	EXPECT_TRUE(starts_with(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_TRUE(starts_with(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_FALSE(starts_with(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_FALSE(starts_with(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_FALSE(starts_with(make_str<typename TypeParam::first_type>(U"ABcd"),
-		make_str<typename TypeParam::second_type>(U"abCD")));
+	EXPECT_TRUE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_TRUE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_FALSE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_FALSE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_FALSE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"ABcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abCD")));
 
 	// TypeParam::first_type starts_with TypeParam::second_type... (always false)
-	EXPECT_FALSE(starts_with(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"ABCDzz")));
-	EXPECT_FALSE(starts_with(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"abcdzz")));
-	EXPECT_FALSE(starts_with(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"abcdzz")));
-	EXPECT_FALSE(starts_with(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"ABCDzz")));
-	EXPECT_FALSE(starts_with(make_str<typename TypeParam::first_type>(U"ABcd"),
-		make_str<typename TypeParam::second_type>(U"abCDzz")));
+	EXPECT_FALSE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCDzz")));
+	EXPECT_FALSE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcdzz")));
+	EXPECT_FALSE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcdzz")));
+	EXPECT_FALSE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCDzz")));
+	EXPECT_FALSE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"ABcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abCDzz")));
 
 	// TypeParam::first_type... starts_with TypeParam::second_type (always same results as first)
-	EXPECT_TRUE(starts_with(make_str<typename TypeParam::first_type>(U"ABCDzz"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_TRUE(starts_with(make_str<typename TypeParam::first_type>(U"abcdzz"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_FALSE(starts_with(make_str<typename TypeParam::first_type>(U"ABCDzz"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_FALSE(starts_with(make_str<typename TypeParam::first_type>(U"abcdzz"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_FALSE(starts_with(make_str<typename TypeParam::first_type>(U"ABcdzz"),
-		make_str<typename TypeParam::second_type>(U"abCD")));
+	EXPECT_TRUE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"ABCDzz"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_TRUE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"abcdzz"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_FALSE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"ABCDzz"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_FALSE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"abcdzz"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_FALSE(starts_with(jessilib::string_cast<typename TypeParam::first_type>(U"ABcdzz"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abCD")));
 }
 
 /** starts_withi */
 
 TYPED_TEST(UnicodeFullTest, starts_withi) {
 	// TypeParam::first_type == TypeParam::second_type
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"ABcd"),
-		make_str<typename TypeParam::second_type>(U"abCD")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"ABcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abCD")));
 
 	// TypeParam::first_type starts_with TypeParam::second_type... (always false)
-	EXPECT_FALSE(starts_withi(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"ABCDzz")));
-	EXPECT_FALSE(starts_withi(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"abcdzz")));
-	EXPECT_FALSE(starts_withi(make_str<typename TypeParam::first_type>(U"ABCD"),
-		make_str<typename TypeParam::second_type>(U"abcdzz")));
-	EXPECT_FALSE(starts_withi(make_str<typename TypeParam::first_type>(U"abcd"),
-		make_str<typename TypeParam::second_type>(U"ABCDzz")));
-	EXPECT_FALSE(starts_withi(make_str<typename TypeParam::first_type>(U"ABcd"),
-		make_str<typename TypeParam::second_type>(U"abCDzz")));
+	EXPECT_FALSE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCDzz")));
+	EXPECT_FALSE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcdzz")));
+	EXPECT_FALSE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"ABCD"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcdzz")));
+	EXPECT_FALSE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"abcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCDzz")));
+	EXPECT_FALSE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"ABcd"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abCDzz")));
 
 	// TypeParam::first_type... starts_with TypeParam::second_type (always same results as first)
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"ABCDzz"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"abcdzz"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"ABCDzz"),
-		make_str<typename TypeParam::second_type>(U"abcd")));
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"abcdzz"),
-		make_str<typename TypeParam::second_type>(U"ABCD")));
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"ABcdzz"),
-		make_str<typename TypeParam::second_type>(U"abCD")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"ABCDzz"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"abcdzz"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"ABCDzz"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abcd")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"abcdzz"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"ABCD")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"ABcdzz"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"abCD")));
 
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"Les Bean del Dallas"),
-		make_str<typename TypeParam::second_type>(U"les")));
-	EXPECT_TRUE(starts_withi(make_str<typename TypeParam::first_type>(U"Les Bean del Dallas"),
-		make_str<typename TypeParam::second_type>(U"les Bean")));
-	EXPECT_FALSE(starts_withi(make_str<typename TypeParam::first_type>(U"Les Bean del Dallas"),
-		make_str<typename TypeParam::second_type>(U"del")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"Les Bean del Dallas"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"les")));
+	EXPECT_TRUE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"Les Bean del Dallas"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"les Bean")));
+	EXPECT_FALSE(starts_withi(jessilib::string_cast<typename TypeParam::first_type>(U"Les Bean del Dallas"),
+		jessilib::string_cast<typename TypeParam::second_type>(U"del")));
 }
 
 TYPED_TEST(UnicodeFullTest, find) {
-	auto abcd_str = make_str<typename TypeParam::first_type>(U"ABCD");
+	auto abcd_str = jessilib::string_cast<typename TypeParam::first_type>(U"ABCD");
 
 	// Empty substring
-	EXPECT_EQ(find(abcd_str, make_str<typename TypeParam::second_type>(U"")), 0);
+	EXPECT_EQ(find(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"")), 0);
 
 	// Single-characters
-	EXPECT_EQ(find(abcd_str, make_str<typename TypeParam::second_type>(U"A")), 0);
-	EXPECT_EQ(find(abcd_str, make_str<typename TypeParam::second_type>(U"B")), 1);
-	EXPECT_EQ(find(abcd_str, make_str<typename TypeParam::second_type>(U"C")), 2);
-	EXPECT_EQ(find(abcd_str, make_str<typename TypeParam::second_type>(U"D")), 3);
-	EXPECT_EQ(find(abcd_str, make_str<typename TypeParam::second_type>(U"E")), decltype(abcd_str)::npos);
+	EXPECT_EQ(find(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"A")), 0);
+	EXPECT_EQ(find(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"B")), 1);
+	EXPECT_EQ(find(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"C")), 2);
+	EXPECT_EQ(find(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"D")), 3);
+	EXPECT_EQ(find(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"E")), decltype(abcd_str)::npos);
 
 	// Two characters
-	EXPECT_EQ(find(abcd_str, make_str<typename TypeParam::second_type>(U"AB")), 0);
-	EXPECT_EQ(find(abcd_str, make_str<typename TypeParam::second_type>(U"BC")), 1);
-	EXPECT_EQ(find(abcd_str, make_str<typename TypeParam::second_type>(U"CD")), 2);
-	EXPECT_EQ(find(abcd_str, make_str<typename TypeParam::second_type>(U"DA")), decltype(abcd_str)::npos);
+	EXPECT_EQ(find(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"AB")), 0);
+	EXPECT_EQ(find(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"BC")), 1);
+	EXPECT_EQ(find(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"CD")), 2);
+	EXPECT_EQ(find(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"DA")), decltype(abcd_str)::npos);
 
-	auto double_abcd_str = make_str<typename TypeParam::first_type>(U"AABBCCDD");
+	auto double_abcd_str = jessilib::string_cast<typename TypeParam::first_type>(U"AABBCCDD");
 
 	// Single-characters
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"A")), 0);
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"B")), 2);
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"C")), 4);
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"D")), 6);
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"E")), decltype(double_abcd_str)::npos);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"A")), 0);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"B")), 2);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"C")), 4);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"D")), 6);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"E")), decltype(double_abcd_str)::npos);
 
 	// Two characters
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"AA")), 0);
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"AB")), 1);
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"BB")), 2);
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"BC")), 3);
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"CC")), 4);
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"CD")), 5);
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"DD")), 6);
-	EXPECT_EQ(find(double_abcd_str, make_str<typename TypeParam::second_type>(U"DA")), decltype(double_abcd_str)::npos);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"AA")), 0);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"AB")), 1);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"BB")), 2);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"BC")), 3);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"CC")), 4);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"CD")), 5);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"DD")), 6);
+	EXPECT_EQ(find(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"DA")), decltype(double_abcd_str)::npos);
 }
 
 TYPED_TEST(UnicodeFullTest, findi) {
-	auto abcd_str = make_str<typename TypeParam::first_type>(U"ABCD");
+	auto abcd_str = jessilib::string_cast<typename TypeParam::first_type>(U"ABCD");
 
 	// Empty substring
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"")), 0);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"")), 0);
 
 	// Single-characters
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"A")), 0);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"B")), 1);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"C")), 2);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"D")), 3);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"E")), decltype(abcd_str)::npos);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"a")), 0);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"b")), 1);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"c")), 2);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"d")), 3);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"e")), decltype(abcd_str)::npos);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"A")), 0);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"B")), 1);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"C")), 2);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"D")), 3);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"E")), decltype(abcd_str)::npos);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"a")), 0);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"b")), 1);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"c")), 2);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"d")), 3);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"e")), decltype(abcd_str)::npos);
 
 	// Two characters
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"AB")), 0);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"BC")), 1);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"CD")), 2);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"DA")), decltype(abcd_str)::npos);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"ab")), 0);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"bc")), 1);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"cd")), 2);
-	EXPECT_EQ(findi(abcd_str, make_str<typename TypeParam::second_type>(U"da")), decltype(abcd_str)::npos);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"AB")), 0);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"BC")), 1);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"CD")), 2);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"DA")), decltype(abcd_str)::npos);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"ab")), 0);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"bc")), 1);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"cd")), 2);
+	EXPECT_EQ(findi(abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"da")), decltype(abcd_str)::npos);
 
-	auto double_abcd_str = make_str<typename TypeParam::first_type>(U"AABBCCDD");
+	auto double_abcd_str = jessilib::string_cast<typename TypeParam::first_type>(U"AABBCCDD");
 
 	// Single-characters
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"A")), 0);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"B")), 2);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"C")), 4);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"D")), 6);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"E")), decltype(double_abcd_str)::npos);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"a")), 0);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"b")), 2);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"c")), 4);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"d")), 6);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"e")), decltype(double_abcd_str)::npos);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"A")), 0);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"B")), 2);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"C")), 4);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"D")), 6);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"E")), decltype(double_abcd_str)::npos);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"a")), 0);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"b")), 2);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"c")), 4);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"d")), 6);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"e")), decltype(double_abcd_str)::npos);
 
 	// Two characters
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"AA")), 0);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"AB")), 1);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"BB")), 2);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"BC")), 3);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"CC")), 4);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"CD")), 5);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"DD")), 6);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"DA")), decltype(double_abcd_str)::npos);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"aa")), 0);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"ab")), 1);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"bb")), 2);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"bc")), 3);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"cc")), 4);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"cd")), 5);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"dd")), 6);
-	EXPECT_EQ(findi(double_abcd_str, make_str<typename TypeParam::second_type>(U"da")), decltype(double_abcd_str)::npos);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"AA")), 0);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"AB")), 1);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"BB")), 2);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"BC")), 3);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"CC")), 4);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"CD")), 5);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"DD")), 6);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"DA")), decltype(double_abcd_str)::npos);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"aa")), 0);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"ab")), 1);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"bb")), 2);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"bc")), 3);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"cc")), 4);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"cd")), 5);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"dd")), 6);
+	EXPECT_EQ(findi(double_abcd_str, jessilib::string_cast<typename TypeParam::second_type>(U"da")), decltype(double_abcd_str)::npos);
 }
 
 /**
