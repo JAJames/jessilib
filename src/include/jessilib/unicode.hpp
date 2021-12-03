@@ -692,6 +692,52 @@ inline void find_if(std::basic_string_view<char>& in_string, find_if_view_predic
 	}
 }
 
+namespace impl_join {
+
+constexpr size_t join_sizes() {
+	return 0;
+}
+
+// Returns maximum number of bytes needed to represent the joined
+template<typename FirstArgT, typename... ArgsT>
+constexpr size_t join_sizes(const FirstArgT& in_arg, const ArgsT&... in_args) {
+	return in_arg.size() + join_sizes(in_args...);
+}
+
+template<typename T>
+constexpr void join_append(T&){}; // noop
+
+template<typename OutT, typename InT, typename... ArgsT>
+constexpr void join_append(OutT& out_string, InT&& in_string, ArgsT&&... in_args) {
+	using InCharT = typename std::remove_cvref_t<InT>::value_type;
+	if constexpr (std::is_same_v<typename std::remove_cvref_t<OutT>::value_type, typename std::remove_cvref_t<InT>::value_type>) {
+		// Join these straight together
+		out_string += std::forward<InT>(in_string);
+	}
+	else {
+		// Append over all the codepoints
+		get_endpoint_result decode;
+		std::basic_string_view<InCharT> in_view = in_string;
+		while ((decode = decode_codepoint(in_view)).units != 0) {
+			encode_codepoint(out_string, decode.codepoint);
+			in_view.remove_prefix(decode.units);
+		}
+	}
+
+	join_append(out_string, std::forward<ArgsT>(in_args)...);
+}
+
+} // impl_join
+
+// Join any number of strings of any type
+template<typename OutT, typename... ArgsT>
+OutT join(ArgsT&&... args) {
+	OutT result;
+	result.reserve(impl_join::join_sizes(args...));
+	impl_join::join_append<OutT, ArgsT...>(result, std::forward<ArgsT>(args)...);
+	return result;
+}
+
 /** to_lower / to_upper */
 //char32_t to_lower(char32_t in_chr); // TODO: implement
 //char32_t to_upper(char32_t in_chr); // TODO: implement

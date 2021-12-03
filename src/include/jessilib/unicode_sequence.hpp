@@ -35,14 +35,19 @@ template<typename CharT>
 using shrink_sequence_tree_action = bool(*)(CharT*& in_write_head, std::basic_string_view<CharT>& read_view);
 
 template<typename CharT>
-using shrink_sequence_tree = std::map<char32_t, shrink_sequence_tree_action<CharT>>;
+using shrink_sequence_tree = const std::pair<char32_t, shrink_sequence_tree_action<CharT>>[];
 
 template<typename CharT>
-using shrink_sequence_tree_member = std::pair<char32_t, shrink_sequence_tree_action<CharT>>;
+using shrink_sequence_tree_member = const std::pair<char32_t, shrink_sequence_tree_action<CharT>>;
+
+template<typename CharT>
+bool shrink_tree_member_compare(const shrink_sequence_tree_member<CharT>& in_lhs, const char32_t in_rhs) {
+	return in_lhs.first < in_rhs;
+}
 
 // Only use for ASTs where each character process is guaranteed to write at most 1 character for each character consumed
-template<typename CharT, typename SequenceTreeT>
-bool apply_shrink_sequence_tree(std::basic_string<CharT>& inout_string, const SequenceTreeT& in_tree) {
+template<typename CharT, const shrink_sequence_tree<CharT> SequenceTreeBegin, size_t SequenceTreeSize>
+bool apply_shrink_sequence_tree(std::basic_string<CharT>& inout_string) {
 	if (inout_string.empty()) {
 		// Nothing to parse
 		return true;
@@ -52,9 +57,10 @@ bool apply_shrink_sequence_tree(std::basic_string<CharT>& inout_string, const Se
 	CharT* write_head = inout_string.data();
 	get_endpoint_result decode;
 
-	while ((decode = decode_codepoint(read_view)).units != 0) {
-		auto parser = in_tree.find(decode.codepoint);
-		if (parser == in_tree.end()) {
+	constexpr auto SubTreeEnd = SequenceTreeBegin + SequenceTreeSize;
+	while ((decode = decode_codepoint(read_view)).units != 0) { // TODO: make constexpr
+		auto parser = std::lower_bound(SequenceTreeBegin, SubTreeEnd, decode.codepoint, &shrink_tree_member_compare<CharT>);
+		if (parser == SubTreeEnd || parser->first != decode.codepoint) {
 			// Just a normal character; write it over
 			while (decode.units != 0) {
 				*write_head = read_view.front();
@@ -84,10 +90,10 @@ bool apply_shrink_sequence_tree(std::basic_string<CharT>& inout_string, const Se
 
 // Only for codepoints representable w/ char8_t (i.e: \n)
 template<typename CharT, char32_t InCodepointV, char8_t OutCodepointV>
-shrink_sequence_tree_member<CharT> make_simple_sequence_pair() {
+constexpr shrink_sequence_tree_member<CharT> make_simple_sequence_pair() {
 	return {
 		InCodepointV,
-		[](CharT*& in_write_head, std::basic_string_view<CharT>&) {
+		[](CharT*& in_write_head, std::basic_string_view<CharT>&) constexpr {
 			*in_write_head = static_cast<CharT>(OutCodepointV);
 			++in_write_head;
 			return true;
@@ -97,10 +103,10 @@ shrink_sequence_tree_member<CharT> make_simple_sequence_pair() {
 
 // Skips a character (i.e: skipping/ignoring newlines)
 template<typename CharT, char32_t InCodepointV>
-shrink_sequence_tree_member<CharT> make_noop_sequence_pair() {
+constexpr shrink_sequence_tree_member<CharT> make_noop_sequence_pair() {
 	return {
 		InCodepointV,
-		[](CharT*&, std::basic_string_view<CharT>&) {
+		[](CharT*&, std::basic_string_view<CharT>&) constexpr {
 			return true;
 		}
 	};
@@ -108,10 +114,10 @@ shrink_sequence_tree_member<CharT> make_noop_sequence_pair() {
 
 // Skips a character or two (i.e: skipping/ignoring newlines)
 template<typename CharT, char32_t InCodepointV, char32_t InOptionalTrailing>
-shrink_sequence_tree_member<CharT> make_noop_sequence_pair() {
+constexpr shrink_sequence_tree_member<CharT> make_noop_sequence_pair() {
 	return {
 		InCodepointV,
-		[](CharT*&, std::basic_string_view<CharT>& read_view) {
+		[](CharT*&, std::basic_string_view<CharT>& read_view) constexpr {
 			// Strip trailing 'InTrailing', if it's present
 			auto decode = decode_codepoint(read_view);
 			if (decode.units != 0
@@ -125,7 +131,7 @@ shrink_sequence_tree_member<CharT> make_noop_sequence_pair() {
 }
 
 template<typename CharT, char32_t InCodepointV, size_t MaxDigitsV, bool ExactDigitsV, bool IsUnicode>
-shrink_sequence_tree_member<CharT> make_octal_sequence_pair() {
+constexpr shrink_sequence_tree_member<CharT> make_octal_sequence_pair() {
 	static_assert(MaxDigitsV > 0); // Use noop instead
 	static_assert((MaxDigitsV == 2 && InCodepointV >= U'0' && InCodepointV <= U'7')
 		|| (MaxDigitsV == 3 && InCodepointV >= U'0' && InCodepointV <= U'3')); // Only currently support single-octet octal values
@@ -133,7 +139,7 @@ shrink_sequence_tree_member<CharT> make_octal_sequence_pair() {
 	// Must have at least 1 octal digit (this one), but may not have more than 3 (2 more).
 	return {
 		InCodepointV,
-		[](CharT*& in_write_head, std::basic_string_view<CharT>& read_view) {
+		[](CharT*& in_write_head, std::basic_string_view<CharT>& read_view) constexpr {
 			// Read in first octal character from InCodepointV
 			unsigned int out_value = InCodepointV - U'0'; // Set initial value
 			if (read_view.empty()) {
@@ -198,12 +204,12 @@ shrink_sequence_tree_member<CharT> make_octal_sequence_pair() {
 }
 
 template<typename CharT, char32_t InCodepointV, size_t MaxDigitsV, bool ExactDigitsV, bool IsUnicode>
-shrink_sequence_tree_member<CharT> make_hex_sequence_pair() {
+constexpr shrink_sequence_tree_member<CharT> make_hex_sequence_pair() {
 	static_assert(MaxDigitsV > 0);
 
 	return {
 		InCodepointV,
-		[](CharT*& in_write_head, std::basic_string_view<CharT>& read_view) {
+		[](CharT*& in_write_head, std::basic_string_view<CharT>& read_view) constexpr {
 			// Does not modify
 			auto read_hex = [](uint32_t& out_value, std::basic_string_view<CharT> in_view, size_t max_digits) {
 				size_t result{};
@@ -263,12 +269,14 @@ shrink_sequence_tree_member<CharT> make_hex_sequence_pair() {
 }
 
 // Calls into another tree with the next character
-template<typename CharT, char32_t InCodepointV, const shrink_sequence_tree<CharT>& SubTreeR, bool FailNotFound = true>
-shrink_sequence_tree_member<CharT> make_tree_sequence_pair() {
+template<typename CharT, char32_t InCodepointV, const shrink_sequence_tree<CharT> SubTreeBegin, size_t SubTreeSize, bool FailNotFound = true>
+constexpr shrink_sequence_tree_member<CharT> make_tree_sequence_pair() {
 	return { InCodepointV, [](CharT*& in_write_head, std::basic_string_view<CharT>& read_view) {
-		auto decode = decode_codepoint(read_view);
-		auto parser = SubTreeR.find(decode.codepoint);
-		if (parser == SubTreeR.end()) {
+		auto decode = decode_codepoint(read_view); // TODO: make constexpr
+
+		constexpr auto SubTreeEnd = SubTreeBegin + SubTreeSize;
+		auto parser = std::lower_bound(SubTreeBegin, SubTreeEnd, decode.codepoint, &shrink_tree_member_compare<CharT>);
+		if (parser == SubTreeEnd || parser->first != decode.codepoint) {
 			if constexpr (FailNotFound) {
 				// Code not found; fail
 				return false;
@@ -291,53 +299,83 @@ shrink_sequence_tree_member<CharT> make_tree_sequence_pair() {
 	} };
 }
 
+// Lessers on left
+template<typename CharT, const shrink_sequence_tree<CharT> SubTreeBegin, size_t SubTreeSize>
+constexpr bool is_sorted() {
+	auto head = SubTreeBegin;
+	constexpr auto end = SubTreeBegin + SubTreeSize;
+
+	if (head == end) {
+		return true;
+	}
+
+	while (head + 1 != end) {
+		const auto next = head + 1;
+		if (head->first > next->first) {
+			return false;
+		}
+
+		++head;
+	}
+
+	return true;
+}
+
+template<typename CharT>
+static constexpr shrink_sequence_tree<CharT> cpp_escapes_main_tree{
+	/** Newline skippers; not actually a C++ thing, but I want it */
+	make_noop_sequence_pair<CharT, U'\n', U'\r'>(),
+	make_noop_sequence_pair<CharT, U'\r', U'\n'>(),
+
+	/** Simple quote escape sequences */
+	make_simple_sequence_pair<CharT, U'\"', '\"'>(),
+	make_simple_sequence_pair<CharT, U'\'', '\''>(),
+
+	// Octal (Single byte value only); should we support octal escapes in sequence?
+	make_octal_sequence_pair<CharT, U'0', 3, false, false>(),
+	make_octal_sequence_pair<CharT, U'1', 3, false, false>(),
+	make_octal_sequence_pair<CharT, U'2', 3, false, false>(),
+	make_octal_sequence_pair<CharT, U'3', 3, false, false>(),
+	make_octal_sequence_pair<CharT, U'4', 2, false, false>(),
+	make_octal_sequence_pair<CharT, U'5', 2, false, false>(),
+	make_octal_sequence_pair<CharT, U'6', 2, false, false>(),
+	make_octal_sequence_pair<CharT, U'7', 2, false, false>(),
+
+	/** Simple escape sequence (question mark) */
+	make_simple_sequence_pair<CharT, U'?', '\?'>(),
+
+	/** Uppercase escapes */
+	make_hex_sequence_pair<CharT, U'U', 8, true, true>(),
+
+	/** Simple escape sequence (backslash) */
+	make_simple_sequence_pair<CharT, U'\\', '\\'>(),
+
+	/** Lowercase escapes */
+	make_simple_sequence_pair<CharT, U'a', '\a'>(),
+	make_simple_sequence_pair<CharT, U'b', '\b'>(),
+	make_simple_sequence_pair<CharT, U'f', '\f'>(),
+	make_simple_sequence_pair<CharT, U'n', '\n'>(),
+	make_simple_sequence_pair<CharT, U'r', '\r'>(),
+	make_simple_sequence_pair<CharT, U't', '\t'>(),
+	make_hex_sequence_pair<CharT, U'u', 4, true, true>(),
+	make_simple_sequence_pair<CharT, U'v', '\v'>(),
+
+	// Hexadecimal; should we support hex escapes in sequence? (i.e: \x00FF == \x00\xFF, which is only true for char/char8_t atm)
+	make_hex_sequence_pair<CharT, U'x', sizeof(CharT) * 2, false, false>(),
+};
+
+template<typename CharT>
+static constexpr shrink_sequence_tree<CharT> cpp_escapes_root_tree{
+	make_tree_sequence_pair<CharT, U'\\', cpp_escapes_main_tree<CharT>, std::size(cpp_escapes_main_tree<CharT>)>()
+};
+
 // Return true for valid sequences, false otherwise
 template<typename CharT>
 bool apply_cpp_escape_sequences(std::basic_string<CharT>& inout_string) {
-	// Handles parsing first character of escape sequence
-	static const shrink_sequence_tree<CharT> main_tree{
-		/** Newline skippers; not actually a C++ thing, but I want it */
-		make_noop_sequence_pair<CharT, U'\n', U'\r'>(),
-		make_noop_sequence_pair<CharT, U'\r', U'\n'>(),
+	static_assert(is_sorted<CharT, cpp_escapes_root_tree<CharT>, std::size(cpp_escapes_root_tree<CharT>)>(), "Tree must be pre-sorted");
+	static_assert(is_sorted<CharT, cpp_escapes_main_tree<CharT>, std::size(cpp_escapes_main_tree<CharT>)>(), "Tree must be pre-sorted");
 
-		/** Simple escape sequences */
-		make_simple_sequence_pair<CharT, U'\'', '\''>(),
-		make_simple_sequence_pair<CharT, U'\"', '\"'>(),
-		make_simple_sequence_pair<CharT, U'?', '\?'>(),
-		make_simple_sequence_pair<CharT, U'\\', '\\'>(),
-		make_simple_sequence_pair<CharT, U'a', '\a'>(),
-		make_simple_sequence_pair<CharT, U'b', '\b'>(),
-		make_simple_sequence_pair<CharT, U'f', '\f'>(),
-		make_simple_sequence_pair<CharT, U'n', '\n'>(),
-		make_simple_sequence_pair<CharT, U'r', '\r'>(),
-		make_simple_sequence_pair<CharT, U't', '\t'>(),
-		make_simple_sequence_pair<CharT, U'v', '\v'>(),
-
-		/** Numeric escape sequences */
-		// Octal (Single byte value only); should we support octal escapes in sequence?
-		make_octal_sequence_pair<CharT, U'0', 3, false, false>(),
-		make_octal_sequence_pair<CharT, U'1', 3, false, false>(),
-		make_octal_sequence_pair<CharT, U'2', 3, false, false>(),
-		make_octal_sequence_pair<CharT, U'3', 3, false, false>(),
-		make_octal_sequence_pair<CharT, U'4', 2, false, false>(),
-		make_octal_sequence_pair<CharT, U'5', 2, false, false>(),
-		make_octal_sequence_pair<CharT, U'6', 2, false, false>(),
-		make_octal_sequence_pair<CharT, U'7', 2, false, false>(),
-
-		// Hex; should we support hex escapes in sequence? (i.e: \x00FF == \x00\xFF, which is only true for char/char8_t atm)
-		make_hex_sequence_pair<CharT, U'x', sizeof(CharT) * 2, false, false>(),
-
-		/** Unicode escape sequences */
-		make_hex_sequence_pair<CharT, U'u', 4, true, true>(),
-		make_hex_sequence_pair<CharT, U'U', 8, true, true>(),
-	};
-
-	// Only checks for '\'
-	static const shrink_sequence_tree<CharT> root_tree{
-		make_tree_sequence_pair<CharT, U'\\', main_tree>()
-	};
-
-	return apply_shrink_sequence_tree(inout_string, root_tree);
+	return apply_shrink_sequence_tree<CharT, cpp_escapes_root_tree<CharT>, std::size(cpp_escapes_root_tree<CharT>)>(inout_string);
 }
 
 } // namespace jessilib
