@@ -45,6 +45,41 @@ bool shrink_tree_member_compare(const shrink_sequence_tree_member<CharT>& in_lhs
 	return in_lhs.first < in_rhs;
 }
 
+// Lessers on left
+template<typename CharT, const shrink_sequence_tree<CharT> TreeBegin, size_t TreeSize>
+constexpr bool is_sorted() {
+	auto head = TreeBegin;
+	constexpr auto end = TreeBegin + TreeSize;
+
+	if (head == end) {
+		return true;
+	}
+
+	while (head + 1 != end) {
+		const auto next = head + 1;
+		if (head->first > next->first) {
+			return false;
+		}
+
+		++head;
+	}
+
+	return true;
+}
+
+// Checks whether or not an escape tree consists solely of ASCII / Basic Latin; NOTE: DOES NOT RECURSE
+template<typename CharT, const shrink_sequence_tree<CharT> TreeBegin, size_t TreeSize>
+constexpr bool is_simple() {
+	// This was going to be used to slightly optimized the searching, until it was realized:
+	// 1) How small the trees are, making the searches require at most maybe 4 checks in most cases
+	static_assert(is_sorted<CharT, TreeBegin, TreeSize>(), "Tree must be pre-sorted");
+	if constexpr (TreeSize == 0) {
+		return true;
+	}
+
+	return TreeBegin[TreeSize - 1].first <= 0x7F;
+}
+
 // Only use for ASTs where each character process is guaranteed to write at most 1 character for each character consumed
 template<typename CharT, const shrink_sequence_tree<CharT> SequenceTreeBegin, size_t SequenceTreeSize>
 bool apply_shrink_sequence_tree(std::basic_string<CharT>& inout_string) {
@@ -274,7 +309,7 @@ constexpr shrink_sequence_tree_member<CharT> make_tree_sequence_pair() {
 	return { InCodepointV, [](CharT*& in_write_head, std::basic_string_view<CharT>& read_view) {
 		auto decode = decode_codepoint(read_view); // TODO: make constexpr
 
-		constexpr auto SubTreeEnd = SubTreeBegin + SubTreeSize;
+		constexpr shrink_sequence_tree_member<CharT>* SubTreeEnd = SubTreeBegin + SubTreeSize;
 		auto parser = std::lower_bound(SubTreeBegin, SubTreeEnd, decode.codepoint, &shrink_tree_member_compare<CharT>);
 		if (parser == SubTreeEnd || parser->first != decode.codepoint) {
 			if constexpr (FailNotFound) {
@@ -299,27 +334,9 @@ constexpr shrink_sequence_tree_member<CharT> make_tree_sequence_pair() {
 	} };
 }
 
-// Lessers on left
-template<typename CharT, const shrink_sequence_tree<CharT> SubTreeBegin, size_t SubTreeSize>
-constexpr bool is_sorted() {
-	auto head = SubTreeBegin;
-	constexpr auto end = SubTreeBegin + SubTreeSize;
-
-	if (head == end) {
-		return true;
-	}
-
-	while (head + 1 != end) {
-		const auto next = head + 1;
-		if (head->first > next->first) {
-			return false;
-		}
-
-		++head;
-	}
-
-	return true;
-}
+/**
+ * C++ escape sequence parser
+ */
 
 template<typename CharT>
 static constexpr shrink_sequence_tree<CharT> cpp_escapes_main_tree{
@@ -377,5 +394,14 @@ bool apply_cpp_escape_sequences(std::basic_string<CharT>& inout_string) {
 
 	return apply_shrink_sequence_tree<CharT, cpp_escapes_root_tree<CharT>, std::size(cpp_escapes_root_tree<CharT>)>(inout_string);
 }
+
+/**
+ * Query string escape sequence parser
+ */
+
+static constexpr shrink_sequence_tree<char8_t> http_query_escapes_root_tree{
+	make_hex_sequence_pair<char8_t, U'%', 2, false, false>(),
+	make_simple_sequence_pair<char8_t, U'+', ' '>()
+};
 
 } // namespace jessilib

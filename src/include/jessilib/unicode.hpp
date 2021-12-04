@@ -710,7 +710,7 @@ constexpr void join_append(T&){}; // noop
 template<typename OutT, typename InT, typename... ArgsT>
 constexpr void join_append(OutT& out_string, InT&& in_string, ArgsT&&... in_args) {
 	using InCharT = typename std::remove_cvref_t<InT>::value_type;
-	if constexpr (std::is_same_v<typename std::remove_cvref_t<OutT>::value_type, typename std::remove_cvref_t<InT>::value_type>) {
+	if constexpr (std::is_same_v<typename std::remove_cvref_t<OutT>::value_type, InCharT>) {
 		// Join these straight together
 		out_string += std::forward<InT>(in_string);
 	}
@@ -737,6 +737,176 @@ OutT join(ArgsT&&... args) {
 	impl_join::join_append<OutT, ArgsT...>(result, std::forward<ArgsT>(args)...);
 	return result;
 }
+
+/**
+ * Calculates the hash of a string based on its codepoints, such that a unicode string will always produce the same hash
+ * regardless of underlying encoding
+ *
+ * This is not intended for generating hashses of arbitrary data; it's specifically intended for strings of text
+ */
+struct text_hash {
+	using is_transparent = std::true_type;
+
+	template<typename CharT>
+	static uint64_t hash(const CharT* data, const CharT* end) {
+		uint64_t hash = 14695981039346656037ULL;
+
+		get_endpoint_result decode;
+		while (data != end) {
+			decode = decode_codepoint({data, static_cast<size_t>(end - data)});
+			if (decode.units == 0) {
+				return hash;
+			}
+
+			hash = hash ^ decode.codepoint;
+			hash = hash * 1099511628211ULL;
+			data += decode.units;
+		}
+
+		return hash;
+	}
+
+	auto operator()(const std::basic_string<char>& in_key) const noexcept { // ASSUMES UTF-8
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(std::basic_string_view<char> in_key) const noexcept {
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(const std::basic_string<char8_t>& in_key) const noexcept { // ASSUMES UTF-8
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(std::basic_string_view<char8_t> in_key) const noexcept {
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(const std::basic_string<char16_t>& in_key) const noexcept { // ASSUMES UTF-8
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(std::basic_string_view<char16_t> in_key) const noexcept {
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(const std::basic_string<char32_t>& in_key) const noexcept { // ASSUMES UTF-8
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(std::basic_string_view<char32_t> in_key) const noexcept {
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+};
+
+struct text_equal {
+	using is_transparent = std::true_type;
+
+	template<typename LhsCharT, typename RhsCharT>
+	bool operator()(std::basic_string_view<LhsCharT> in_lhs, std::basic_string_view<RhsCharT> in_rhs) const noexcept {
+		return equals<LhsCharT, RhsCharT>(in_lhs, in_rhs);
+	}
+
+	template<typename LhsCharT, typename RhsCharT>
+	bool operator()(std::basic_string_view<LhsCharT> in_lhs, const std::basic_string<RhsCharT>& in_rhs) const noexcept {
+		return equals<LhsCharT, RhsCharT>(in_lhs, in_rhs);
+	}
+
+	template<typename LhsCharT, typename RhsCharT>
+	bool operator()(const std::basic_string<LhsCharT>& in_lhs, std::basic_string_view<RhsCharT> in_rhs) const noexcept {
+		return equals<LhsCharT, RhsCharT>(in_lhs, in_rhs);
+	}
+
+	template<typename LhsCharT, typename RhsCharT>
+	bool operator()(const std::basic_string<LhsCharT>& in_lhs, const std::basic_string<RhsCharT>& in_rhs) const noexcept {
+		return equals<LhsCharT, RhsCharT>(in_lhs, in_rhs);
+	}
+};
+
+/**
+ * Calculates the hash of a string based on its folded codepoints, such that a unicode string will always produce the
+ * same hash regardless of underlying encoding or the casing of its values.
+ *
+ * This is not intended for generating hashses of arbitrary data; it's specifically intended for strings of text
+ */
+struct text_hashi {
+	using is_transparent = std::true_type;
+
+	template<typename CharT>
+	static uint64_t hash(const CharT* data, const CharT* end) {
+		uint64_t hash = 14695981039346656037ULL;
+
+		get_endpoint_result decode;
+		while (data != end) {
+			decode = decode_codepoint({data, static_cast<size_t>(end - data)});
+			if (decode.units == 0) {
+				return hash;
+			}
+
+			hash = hash ^ fold(decode.codepoint);
+			hash = hash * 1099511628211ULL;
+			data += decode.units;
+		}
+
+		return hash;
+	}
+
+	auto operator()(const std::basic_string<char>& in_key) const noexcept { // ASSUMES UTF-8
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(std::basic_string_view<char> in_key) const noexcept {
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(const std::basic_string<char8_t>& in_key) const noexcept { // ASSUMES UTF-8
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(std::basic_string_view<char8_t> in_key) const noexcept {
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(const std::basic_string<char16_t>& in_key) const noexcept { // ASSUMES UTF-8
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(std::basic_string_view<char16_t> in_key) const noexcept {
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(const std::basic_string<char32_t>& in_key) const noexcept { // ASSUMES UTF-8
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+
+	auto operator()(std::basic_string_view<char32_t> in_key) const noexcept {
+		return hash(in_key.data(), in_key.data() + in_key.size());
+	}
+};
+
+struct text_equali {
+	using is_transparent = std::true_type;
+
+	template<typename LhsCharT, typename RhsCharT>
+	bool operator()(std::basic_string_view<LhsCharT> in_lhs, std::basic_string_view<RhsCharT> in_rhs) const noexcept {
+		return equalsi<LhsCharT, RhsCharT>(in_lhs, in_rhs);
+	}
+
+	template<typename LhsCharT, typename RhsCharT>
+	bool operator()(std::basic_string_view<LhsCharT> in_lhs, const std::basic_string<RhsCharT>& in_rhs) const noexcept {
+		return equalsi<LhsCharT, RhsCharT>(in_lhs, in_rhs);
+	}
+
+	template<typename LhsCharT, typename RhsCharT>
+	bool operator()(const std::basic_string<LhsCharT>& in_lhs, std::basic_string_view<RhsCharT> in_rhs) const noexcept {
+		return equalsi<LhsCharT, RhsCharT>(in_lhs, in_rhs);
+	}
+
+	template<typename LhsCharT, typename RhsCharT>
+	bool operator()(const std::basic_string<LhsCharT>& in_lhs, const std::basic_string<RhsCharT>& in_rhs) const noexcept {
+		return equalsi<LhsCharT, RhsCharT>(in_lhs, in_rhs);
+	}
+};
 
 /** to_lower / to_upper */
 //char32_t to_lower(char32_t in_chr); // TODO: implement
