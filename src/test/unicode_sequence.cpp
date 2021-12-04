@@ -21,6 +21,7 @@
 #include "test.hpp"
 
 using char_types = ::testing::Types<char, char8_t, char16_t, char32_t>;
+using utf8_char_types = ::testing::Types<char, char8_t>;
 using char_type_combos = ::testing::Types<
 	std::pair<char, char>, std::pair<char, char8_t>, std::pair<char, char16_t>, std::pair<char, char32_t>,
 	std::pair<char8_t, char>, std::pair<char8_t, char8_t>, std::pair<char8_t, char16_t>, std::pair<char8_t, char32_t>,
@@ -32,6 +33,14 @@ class UnicodeSequenceTest : public ::testing::Test {
 public:
 };
 TYPED_TEST_SUITE(UnicodeSequenceTest, char_types);
+
+template<typename T>
+class UnicodeUTF8SequenceTest : public ::testing::Test {
+public:
+};
+TYPED_TEST_SUITE(UnicodeUTF8SequenceTest, utf8_char_types);
+
+constexpr char32_t MAX_LOOP_CODEPOINT = 0x100FF; // use 0x10FFFF for full testing
 
 #define TEST_CPP_SEQUENCE(expr) \
 	{ auto parsed_string = jessilib::string_cast<TypeParam>(#expr); \
@@ -138,9 +147,9 @@ TYPED_TEST(UnicodeSequenceTest, cpp_hex) {
 		return;
 	}
 
-	// "x0" -> "x10ffff" with & without leading zeroes
+	// "x0" -> "x100ff" with & without leading zeroes
 	if constexpr (sizeof(TypeParam) == 4) {
-		for (unsigned int codepoint = 0; codepoint <= 0x10000; ++codepoint) {
+		for (unsigned int codepoint = 0; codepoint <= MAX_LOOP_CODEPOINT; ++codepoint) {
 			std::basic_string<TypeParam> parsed_string;
 			for (size_t min_length = 0; min_length <= 8; ++min_length) {
 				// "\x0" -> "\x0010ffff"
@@ -156,7 +165,7 @@ TYPED_TEST(UnicodeSequenceTest, cpp_hex) {
 }
 
 TYPED_TEST(UnicodeSequenceTest, cpp_u16) {
-	// "u000" -> "uffff" with & without leading zeroes
+	// "u0000" -> "uffff" with & without leading zeroes
 	for (unsigned int codepoint = 0; codepoint <= 0xFFFF; ++codepoint) {
 		std::basic_string<TypeParam> parsed_string = jessilib::string_cast<TypeParam>("\\u");
 		parsed_string += make_hex_string<TypeParam>(codepoint, 4);
@@ -169,8 +178,8 @@ TYPED_TEST(UnicodeSequenceTest, cpp_u16) {
 }
 
 TYPED_TEST(UnicodeSequenceTest, cpp_u32) {
-	// "u000" -> "uffff" with & without leading zeroes
-	for (unsigned int codepoint = 0; codepoint <= 0x100FF; ++codepoint) {
+	// "U00000000" -> "U000100FF" with & without leading zeroes
+	for (unsigned int codepoint = 0; codepoint <= MAX_LOOP_CODEPOINT; ++codepoint) {
 		std::basic_string<TypeParam> parsed_string = jessilib::string_cast<TypeParam>("\\U");
 		parsed_string += make_hex_string<TypeParam>(codepoint, 8);
 		jessilib::apply_cpp_escape_sequences(parsed_string);
@@ -179,4 +188,124 @@ TYPED_TEST(UnicodeSequenceTest, cpp_u32) {
 		EXPECT_NE(decode.units, 0);
 		EXPECT_EQ(decode.codepoint, static_cast<char32_t>(codepoint));
 	}
+}
+
+/**
+ * Query strings
+ */
+
+TYPED_TEST(UnicodeUTF8SequenceTest, single_chars) {
+	// [U+0000, U+100FF)
+	for (char32_t codepoint = 0; codepoint < MAX_LOOP_CODEPOINT; ++codepoint) {
+		std::basic_string<TypeParam> expected;
+		size_t units = jessilib::encode_codepoint(expected, codepoint);
+		EXPECT_NE(units, 0);
+		EXPECT_EQ(units, expected.size());
+
+		// Construct the query string
+		std::basic_string<TypeParam> query_string;
+		for (auto& unit : expected) {
+			char encoded[3] { '%', 0, 0 };
+			char* encoded_end = encoded + sizeof(encoded);
+			auto to_chars_result = std::to_chars(encoded + 1, encoded_end, static_cast<unsigned char>(unit), 16);
+			ASSERT_EQ(to_chars_result.ec, std::errc{}) // assertion will fail when `unit` is signed type
+				<< "For unit " << static_cast<int>(unit) << " in codepoint " << static_cast<int>(codepoint) << std::endl;
+
+			if (to_chars_result.ptr != encoded_end) {
+				// Only wrote one hex; shift it
+				encoded[2] = encoded[1];
+				encoded[1] = '0';
+			}
+
+			EXPECT_EQ(encoded[0], '%');
+			EXPECT_NE(encoded[1], 0);
+			EXPECT_NE(encoded[2], 0);
+			query_string.insert(query_string.end(), encoded, encoded_end);
+		}
+		EXPECT_EQ(query_string.size(), expected.size() * 3);
+
+		// Decode & check the query string
+		jessilib::deserialize_http_query(query_string);
+		EXPECT_EQ(query_string, expected);
+	}
+}
+
+TYPED_TEST(UnicodeUTF8SequenceTest, invalids) {
+	std::basic_string<TypeParam> query_string, long_query_string;
+	for (size_t unit = 0; unit <= 0xFF; ++unit) {
+		TypeParam encoded[2] { '%', static_cast<TypeParam>(unit) };
+		TypeParam* encoded_end = encoded + sizeof(encoded);
+		query_string.insert(query_string.end(), encoded, encoded_end);
+
+		long_query_string += query_string;
+		jessilib::deserialize_http_query(query_string);
+		EXPECT_TRUE(query_string.empty())
+			<< "in unit: " << unit << std::endl;
+	}
+
+	jessilib::deserialize_http_query(long_query_string);
+	EXPECT_TRUE(long_query_string.empty());
+}
+
+TYPED_TEST(UnicodeUTF8SequenceTest, invalids_2len) {
+	std::basic_string<TypeParam> query_string, long_query_string;
+	for (size_t unit = 0; unit <= 0xFFFF; ++unit) {
+		TypeParam first = static_cast<TypeParam>(unit >> 8); // order of these two doesn't matter
+		TypeParam second = static_cast<TypeParam>(unit & 0xFF);
+		if (jessilib::as_base(first, 16) >= 0
+			&& jessilib::as_base(second, 16) >= 0) {
+			continue;
+		}
+		TypeParam encoded[3] { '%', static_cast<TypeParam>(first), static_cast<TypeParam>(second) };
+		TypeParam* encoded_end = encoded + sizeof(encoded);
+		query_string.insert(query_string.end(), encoded, encoded_end);
+
+		long_query_string += query_string;
+		jessilib::deserialize_http_query(query_string);
+		EXPECT_TRUE(query_string.empty())
+						<< "in unit: " << unit << std::endl;
+	}
+
+	jessilib::deserialize_http_query(long_query_string);
+	EXPECT_TRUE(long_query_string.empty());
+}
+
+TYPED_TEST(UnicodeUTF8SequenceTest, invalids_trailing) {
+	std::basic_string<TypeParam> query_string, long_query_string;
+	for (size_t unit = 0; unit <= 0xFF; ++unit) {
+		TypeParam encoded[3] { '%', static_cast<TypeParam>(unit), '%' };
+		TypeParam* encoded_end = encoded + sizeof(encoded);
+		query_string.insert(query_string.end(), encoded, encoded_end);
+
+		long_query_string += query_string;
+		jessilib::deserialize_http_query(query_string);
+		EXPECT_TRUE(query_string.empty())
+						<< "in unit: " << unit << std::endl;
+	}
+
+	jessilib::deserialize_http_query(long_query_string);
+	EXPECT_TRUE(long_query_string.empty());
+}
+
+TYPED_TEST(UnicodeUTF8SequenceTest, invalids_2len_trailing) {
+	std::basic_string<TypeParam> query_string, long_query_string;
+	for (size_t unit = 0; unit <= 0xFFFF; ++unit) {
+		TypeParam first = static_cast<TypeParam>(unit >> 8); // order of these two doesn't matter
+		TypeParam second = static_cast<TypeParam>(unit & 0xFF);
+		if (jessilib::as_base(first, 16) >= 0
+			&& jessilib::as_base(second, 16) >= 0) {
+			continue;
+		}
+		TypeParam encoded[4] { '%', static_cast<TypeParam>(first), static_cast<TypeParam>(second), '%' };
+		TypeParam* encoded_end = encoded + sizeof(encoded);
+		query_string.insert(query_string.end(), encoded, encoded_end);
+
+		long_query_string += query_string;
+		jessilib::deserialize_http_query(query_string);
+		EXPECT_TRUE(query_string.empty())
+						<< "in unit: " << unit << std::endl;
+	}
+
+	jessilib::deserialize_http_query(long_query_string);
+	EXPECT_TRUE(long_query_string.empty());
 }

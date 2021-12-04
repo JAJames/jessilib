@@ -399,9 +399,32 @@ bool apply_cpp_escape_sequences(std::basic_string<CharT>& inout_string) {
  * Query string escape sequence parser
  */
 
-static constexpr shrink_sequence_tree<char8_t> http_query_escapes_root_tree{
-	make_hex_sequence_pair<char8_t, U'%', 2, false, false>(),
-	make_simple_sequence_pair<char8_t, U'+', ' '>()
+template<typename CharT,
+	std::enable_if_t<sizeof(CharT) == 1>* = nullptr> // make_hex_sequence_pair isn't going to play well with other types
+static constexpr shrink_sequence_tree<CharT> http_query_escapes_root_tree{
+	make_hex_sequence_pair<CharT, U'%', 2, true, false>(),
+	make_simple_sequence_pair<CharT, U'+', ' '>()
 };
+static_assert(is_sorted<char, http_query_escapes_root_tree<char>, std::size(http_query_escapes_root_tree<char>)>(), "Tree must be pre-sorted");
+static_assert(is_sorted<char8_t, http_query_escapes_root_tree<char8_t>, std::size(http_query_escapes_root_tree<char8_t>)>(), "Tree must be pre-sorted");
+
+template<typename CharT,
+    std::enable_if_t<sizeof(CharT) == 1>* = nullptr>
+bool deserialize_http_query(std::basic_string<CharT>& inout_string) {
+	return apply_shrink_sequence_tree<CharT, http_query_escapes_root_tree<CharT>, std::size(http_query_escapes_root_tree<CharT>)>(inout_string);
+}
+
+// TODO: decide whether to take this approach, where query strings are assumed to represent UTF-8 text data, OR implement
+// such that calling deserialize_http_query will assume the relevant encoding (i.e: calling with char16_t would read in
+// escaped query values as bytes in codepoint char16_t, rather than utf-8 encoding sequence)
+/*template<typename CharT,
+	std::enable_if_t<sizeof(CharT) != 1>* = nullptr>
+bool deserialize_http_query(std::basic_string<CharT>& inout_string) {
+	//TODO: optimize this?
+	std::basic_string<char8_t> u8query_string = string_cast<char8_t>(inout_string);
+	bool result = deserialize_http_query<char8_t>(u8query_string);
+	inout_string = string_cast<CharT>(u8query_string);
+	return result;
+}*/
 
 } // namespace jessilib
