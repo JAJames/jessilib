@@ -21,108 +21,9 @@
 #include <string>
 #include <string_view>
 #include <ostream>
+#include "unicode_base.hpp"
 
 namespace jessilib {
-
-/** encode_codepoint */
-
-/**
- * Encodes a codepoint, and appends it to an output string
- *
- * @param out_string String to append
- * @param in_codepoint Codepoint to encode
- * @return Number of data elements appended to out_string
- */
-size_t encode_codepoint(std::string& out_string, char32_t in_codepoint); // DEPRECATED: ASSUMES UTF-8
-size_t encode_codepoint(std::u8string& out_string, char32_t in_codepoint);
-size_t encode_codepoint(std::u16string& out_string, char32_t in_codepoint);
-size_t encode_codepoint(std::u32string& out_string, char32_t in_codepoint);
-
-/**
- * Encodes a codepoint to an output stream
- *
- * @param out_stream Stream to write codepoint to
- * @param in_codepoint Codepoint to encode
- * @return Number of data elements appending to out_stream
- */
-size_t encode_codepoint(std::basic_ostream<char>& out_stream, char32_t in_codepoint); // DEPRECATED: ASSUMES UTF-8
-size_t encode_codepoint(std::basic_ostream<char8_t>& out_stream, char32_t in_codepoint);
-size_t encode_codepoint(std::basic_ostream<char16_t>& out_stream, char32_t in_codepoint);
-size_t encode_codepoint(std::basic_ostream<char32_t>& out_stream, char32_t in_codepoint);
-
-/**
- * Encodes a codepoint directly to a character buffer
- * Note: Do not use this without careful consideration; note the size requirements:
- * 1) char8_t may write up to 4 elements
- * 2) char16_t may write up to 2 elements
- * 3) char32_t may write up to 1 element
- * 4) char may write up to 4 elements; provided solely for compatibility/ease of use
- *
- * @param out_buffer Character buffer to write to
- * @param in_codepoint Codepoint to encode
- * @return Number of data elements written to out_buffer
- */
-size_t encode_codepoint(char* out_buffer, char32_t in_codepoint);
-size_t encode_codepoint(char8_t* out_buffer, char32_t in_codepoint);
-size_t encode_codepoint(char16_t* out_buffer, char32_t in_codepoint);
-size_t encode_codepoint(char32_t* out_buffer, char32_t in_codepoint);
-
-/**
- * Encodes a codepoint and returns it as a string
- *
- * @param in_codepoint Codepoint to encode
- * @return A string containing the codepoint encoded to the appropriate underlying CharT type
- */
-std::u8string encode_codepoint_u8(char32_t in_codepoint);
-std::u16string encode_codepoint_u16(char32_t in_codepoint);
-std::u32string encode_codepoint_u32(char32_t in_codepoint);
-
-/** decode_codepoint */
-
-struct get_endpoint_result {
-	char32_t codepoint{}; // Codepoint
-	size_t units{}; // Number of data units codepoint was represented by, or 0
-};
-
-/**
- * Decodes the front codepoint in a string
- *
- * @param in_string String to decode a codepoint from
- * @return A struct containing a valid codepoint and the number of representative data units on success, zero otherwise.
- */
-get_endpoint_result decode_codepoint(const std::string_view& in_string); // DEPRECATED: ASSUMES UTF-8
-get_endpoint_result decode_codepoint(const std::u8string_view& in_string); // UTF-8
-get_endpoint_result decode_codepoint(const std::u16string_view& in_string); // UTF-16
-get_endpoint_result decode_codepoint(const std::u32string_view& in_string); // UTF-32
-
-/** advance_codepoint */
-
-template<typename T>
-char32_t advance_codepoint(std::basic_string_view<T>& in_string) {
-	auto result = decode_codepoint(in_string);
-	in_string.remove_prefix(result.units);
-	return result.codepoint;
-}
-
-/** next_codepoint */
-
-template<typename T>
-std::basic_string_view<T> next_codepoint(const std::basic_string_view<T>& in_string) {
-	return in_string.substr(decode_codepoint(in_string).units);
-}
-
-/** is_valid_codepoint */
-
-template<typename T>
-bool is_valid_codepoint(const std::basic_string_view<T>& in_string) {
-	return decode_codepoint(in_string).units != 0;
-}
-
-/** utf-16 surrogate helpers */
-
-bool is_high_surrogate(char32_t in_codepoint);
-bool is_low_surrogate(char32_t in_codepoint);
-get_endpoint_result decode_surrogate_pair(char16_t in_high_surrogate, char16_t in_low_surrogate);
 
 /** Utilities */
 
@@ -135,6 +36,8 @@ struct is_string : std::false_type {};
 template<typename T>
 struct is_string<std::basic_string<T>> {
 	using type = T;
+	static constexpr bool is_fixed_array{ false };
+	static constexpr bool is_container{ true };
 	static constexpr bool value{ true };
 	constexpr operator bool() const noexcept { return true; }
 	constexpr bool operator()() const noexcept { return true; }
@@ -143,6 +46,8 @@ struct is_string<std::basic_string<T>> {
 template<typename T>
 struct is_string<std::basic_string_view<T>> {
 	using type = T;
+	static constexpr bool is_fixed_array{ false };
+	static constexpr bool is_container{ true };
 	static constexpr bool value{ true };
 	constexpr operator bool() const noexcept { return true; }
 	constexpr bool operator()() const noexcept { return true; }
@@ -151,6 +56,8 @@ struct is_string<std::basic_string_view<T>> {
 template<typename T>
 struct is_string<T*> {
 	using type = T;
+	static constexpr bool is_fixed_array{ false };
+	static constexpr bool is_container{ false };
 	static constexpr bool value{ true };
 	constexpr operator bool() const noexcept { return true; }
 	constexpr bool operator()() const noexcept { return true; }
@@ -159,6 +66,8 @@ struct is_string<T*> {
 template<typename T>
 struct is_string<T[]> {
 	using type = T;
+	static constexpr bool is_fixed_array{ true };
+	static constexpr bool is_container{ false };
 	static constexpr bool value{ true };
 	constexpr operator bool() const noexcept { return true; }
 	constexpr bool operator()() const noexcept { return true; }
@@ -167,6 +76,8 @@ struct is_string<T[]> {
 template<typename T, size_t N>
 struct is_string<T[N]> {
 	using type = T;
+	static constexpr bool is_fixed_array{ true };
+	static constexpr bool is_container{ false };
 	static constexpr bool value{ true };
 	constexpr operator bool() const noexcept { return true; }
 	constexpr bool operator()() const noexcept { return true; }
@@ -214,57 +125,59 @@ std::basic_string_view<OutCharT> string_view_cast(const InT& in_string) {
 
 	size_t out_string_units = in_string_bytes / sizeof(OutCharT);
 	const OutCharT* data_begin = reinterpret_cast<const OutCharT*>(in_string.data());
-	std::basic_string_view<OutCharT> result{ data_begin, out_string_units };
-
-	if (!is_valid(result)) {
-		// Result isn't valid; discard and return empty
-		return {};
-	}
-
-	return result;
+	return { data_begin, out_string_units };
 }
 
 template<typename OutCharT, typename InT>
 std::basic_string<OutCharT> string_cast(const InT& in_string) {
 	static_assert(impl_unicode::is_string<InT>::value == true);
 	using InCharT = typename impl_unicode::is_string<InT>::type;
+	using InEquivalentT = typename unicode_traits<InCharT>::equivalent_type;
 	using InViewT = std::basic_string_view<InCharT>;
-	std::basic_string<OutCharT> result;
+	using OutT = std::basic_string<OutCharT>;
 
-	// Just do a dumb copy when same type & valid; should be slightly faster than re-encoding
-	if constexpr (std::is_same_v<OutCharT, InCharT>) {
-		if (is_valid(in_string)) {
-			result = in_string;
+	if constexpr (std::is_same_v<InT, OutT>) {
+		// This does nothing at all; consider static_assert against this?
+		return in_string;
+	}
+	else if constexpr (std::is_same_v<OutCharT, InCharT>
+	    || std::is_same_v<OutCharT, InEquivalentT>) {
+		// Just do a dumb copy when same or equivalent char types; should be faster than re-encoding
+		if constexpr (impl_unicode::is_string<InT>::is_container) {
+			return { reinterpret_cast<const OutCharT*>(in_string.data()), in_string.size() };
+		}
+		else if constexpr (impl_unicode::is_string<InT>::is_fixed_array) {
+			return { reinterpret_cast<const OutCharT*>(in_string), std::size(in_string) - 1 }; // strip null term
+		}
+		else {
+			return { reinterpret_cast<const OutCharT*>(in_string) };
+		}
+	}
+	else {
+		// Last resort: reencode the string
+		std::basic_string<OutCharT> result;
+		InViewT in_string_view = static_cast<InViewT>(in_string);
+		if constexpr (sizeof(InCharT) <= sizeof(OutCharT)) {
+			// When copying to a larger type, we will need _at most_ as many elements as the smaller storage type
+			result.reserve(in_string_view.size());
+		}
+		else {
+			result.reserve(in_string_view.size() * (sizeof(OutCharT) / sizeof(InCharT)));
+		}
+
+		while (!in_string_view.empty()) {
+			get_endpoint_result string_front = decode_codepoint(in_string_view);
+			if (string_front.units == 0) {
+				return {};
+			}
+			in_string_view.remove_prefix(string_front.units);
+
+			encode_codepoint(result, string_front.codepoint);
 		}
 
 		return result;
 	}
-
-	InViewT in_string_view = static_cast<InViewT>(in_string);
-	if constexpr (sizeof(InCharT) <= sizeof(OutCharT)) {
-		// When copying to a larger type, we will need _at most_ as many elements as the smaller storage type
-		result.reserve(in_string_view.size());
-	}
-	else {
-		result.reserve(in_string_view.size() * (sizeof(OutCharT) / sizeof(InCharT)));
-	}
-
-	while (!in_string_view.empty()) {
-		get_endpoint_result string_front = decode_codepoint(in_string_view);
-		if (string_front.units == 0) {
-			return {};
-		}
-		in_string_view.remove_prefix(string_front.units);
-
-		encode_codepoint(result, string_front.codepoint);
-	}
-
-	return result;
 }
-
-/** single-unit helper utilities */
-char32_t fold(char32_t in_codepoint); // Folds codepoint for case-insensitive checks (not for human output)
-int as_base(char32_t in_character, unsigned int base); // The value represented by in_character in terms of base if valid, -1 otherwise
 
 /**
  * Checks if two codepoints are equal to each-other (case insensitive)
@@ -753,7 +666,7 @@ struct text_hash {
 
 		get_endpoint_result decode;
 		while (data != end) {
-			decode = decode_codepoint({data, static_cast<size_t>(end - data)});
+			decode = decode_codepoint(data, end);
 			if (decode.units == 0) {
 				return hash;
 			}
@@ -838,7 +751,7 @@ struct text_hashi {
 
 		get_endpoint_result decode;
 		while (data != end) {
-			decode = decode_codepoint({data, static_cast<size_t>(end - data)});
+			decode = decode_codepoint(data, end - data);
 			if (decode.units == 0) {
 				return hash;
 			}

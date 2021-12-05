@@ -25,8 +25,7 @@
 
 #pragma once
 
-#include <map>
-#include "unicode.hpp"
+#include "unicode_base.hpp"
 
 namespace jessilib {
 
@@ -41,7 +40,7 @@ template<typename CharT>
 using shrink_sequence_tree_member = const std::pair<char32_t, shrink_sequence_tree_action<CharT>>;
 
 template<typename CharT>
-bool shrink_tree_member_compare(const shrink_sequence_tree_member<CharT>& in_lhs, const char32_t in_rhs) {
+constexpr bool shrink_tree_member_compare(const shrink_sequence_tree_member<CharT>& in_lhs, const char32_t in_rhs) {
 	return in_lhs.first < in_rhs;
 }
 
@@ -82,7 +81,7 @@ constexpr bool is_simple() {
 
 // Only use for ASTs where each character process is guaranteed to write at most 1 character for each character consumed
 template<typename CharT, const shrink_sequence_tree<CharT> SequenceTreeBegin, size_t SequenceTreeSize>
-bool apply_shrink_sequence_tree(std::basic_string<CharT>& inout_string) {
+constexpr bool apply_shrink_sequence_tree(std::basic_string<CharT>& inout_string) {
 	if (inout_string.empty()) {
 		// Nothing to parse
 		return true;
@@ -93,7 +92,7 @@ bool apply_shrink_sequence_tree(std::basic_string<CharT>& inout_string) {
 	get_endpoint_result decode;
 
 	constexpr auto SubTreeEnd = SequenceTreeBegin + SequenceTreeSize;
-	while ((decode = decode_codepoint(read_view)).units != 0) { // TODO: make constexpr
+	while ((decode = decode_codepoint(read_view)).units != 0) {
 		auto parser = std::lower_bound(SequenceTreeBegin, SubTreeEnd, decode.codepoint, &shrink_tree_member_compare<CharT>);
 		if (parser == SubTreeEnd || parser->first != decode.codepoint) {
 			// Just a normal character; write it over
@@ -306,8 +305,8 @@ constexpr shrink_sequence_tree_member<CharT> make_hex_sequence_pair() {
 // Calls into another tree with the next character
 template<typename CharT, char32_t InCodepointV, const shrink_sequence_tree<CharT> SubTreeBegin, size_t SubTreeSize, bool FailNotFound = true>
 constexpr shrink_sequence_tree_member<CharT> make_tree_sequence_pair() {
-	return { InCodepointV, [](CharT*& in_write_head, std::basic_string_view<CharT>& read_view) {
-		auto decode = decode_codepoint(read_view); // TODO: make constexpr
+	return { InCodepointV, [](CharT*& in_write_head, std::basic_string_view<CharT>& read_view) constexpr {
+		auto decode = decode_codepoint(read_view);
 
 		constexpr shrink_sequence_tree_member<CharT>* SubTreeEnd = SubTreeBegin + SubTreeSize;
 		auto parser = std::lower_bound(SubTreeBegin, SubTreeEnd, decode.codepoint, &shrink_tree_member_compare<CharT>);
@@ -388,7 +387,7 @@ static constexpr shrink_sequence_tree<CharT> cpp_escapes_root_tree{
 
 // Return true for valid sequences, false otherwise
 template<typename CharT>
-bool apply_cpp_escape_sequences(std::basic_string<CharT>& inout_string) {
+constexpr bool apply_cpp_escape_sequences(std::basic_string<CharT>& inout_string) {
 	static_assert(is_sorted<CharT, cpp_escapes_root_tree<CharT>, std::size(cpp_escapes_root_tree<CharT>)>(), "Tree must be pre-sorted");
 	static_assert(is_sorted<CharT, cpp_escapes_main_tree<CharT>, std::size(cpp_escapes_main_tree<CharT>)>(), "Tree must be pre-sorted");
 
@@ -410,7 +409,7 @@ static_assert(is_sorted<char8_t, http_query_escapes_root_tree<char8_t>, std::siz
 
 template<typename CharT,
     std::enable_if_t<sizeof(CharT) == 1>* = nullptr>
-bool deserialize_http_query(std::basic_string<CharT>& inout_string) {
+constexpr bool deserialize_http_query(std::basic_string<CharT>& inout_string) {
 	return apply_shrink_sequence_tree<CharT, http_query_escapes_root_tree<CharT>, std::size(http_query_escapes_root_tree<CharT>)>(inout_string);
 }
 

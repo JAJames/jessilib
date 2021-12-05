@@ -18,7 +18,30 @@
 
 #include "jessilib/unicode_sequence.hpp"
 #include <charconv>
+#include "jessilib/unicode.hpp" // string_cast
 #include "test.hpp"
+
+using namespace std;
+
+// Compile-time tests for constexpr on compilers which support C++20 constexpr std::string
+#ifdef __cpp_lib_constexpr_string
+constexpr std::string cpp_constexpr(std::string_view in_expression) {
+	std::string result{ in_expression };
+	jessilib::apply_cpp_escape_sequences(result);
+	return result;
+}
+
+constexpr std::string query_constexpr(std::string_view in_expression) {
+	std::string result{ in_expression };
+	jessilib::deserialize_http_query(result);
+	return result;
+}
+static_assert(cpp_constexpr("test"s) == "test"s);
+static_assert(cpp_constexpr("\\r\\n"s) == "\r\n"s);
+static_assert(query_constexpr("test"s) == "test"s);
+static_assert(query_constexpr("first+second"s) == "first second"s);
+static_assert(query_constexpr("first%20second"s) == "first second"s);
+#endif // __cpp_lib_constexpr_string
 
 using char_types = ::testing::Types<char, char8_t, char16_t, char32_t>;
 using utf8_char_types = ::testing::Types<char, char8_t>;
@@ -171,7 +194,7 @@ TYPED_TEST(UnicodeSequenceTest, cpp_u16) {
 		parsed_string += make_hex_string<TypeParam>(codepoint, 4);
 		jessilib::apply_cpp_escape_sequences(parsed_string);
 
-		auto decode = jessilib::decode_codepoint(parsed_string);
+		auto decode = jessilib::decode_codepoint(parsed_string.data(), parsed_string.size());
 		EXPECT_NE(decode.units, 0);
 		EXPECT_EQ(decode.codepoint, static_cast<char32_t>(codepoint));
 	}
@@ -184,7 +207,7 @@ TYPED_TEST(UnicodeSequenceTest, cpp_u32) {
 		parsed_string += make_hex_string<TypeParam>(codepoint, 8);
 		jessilib::apply_cpp_escape_sequences(parsed_string);
 
-		auto decode = jessilib::decode_codepoint(parsed_string);
+		auto decode = jessilib::decode_codepoint(parsed_string.data(), parsed_string.size());
 		EXPECT_NE(decode.units, 0);
 		EXPECT_EQ(decode.codepoint, static_cast<char32_t>(codepoint));
 	}
