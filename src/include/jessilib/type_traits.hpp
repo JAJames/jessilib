@@ -212,8 +212,8 @@ struct is_unordered_multiset<std::unordered_multiset<T>> {
 template<typename T>
 struct is_map : std::false_type {};
 
-template<typename KeyT, typename ValueT>
-struct is_map<std::map<KeyT, ValueT>> {
+template<typename KeyT, typename ValueT, typename CompareT, typename AllocatorT>
+struct is_map<std::map<KeyT, ValueT, CompareT, AllocatorT>> {
 	using key_type = KeyT;
 	using value_type = ValueT;
 	static constexpr bool value{ true };
@@ -226,8 +226,8 @@ struct is_map<std::map<KeyT, ValueT>> {
 template<typename T>
 struct is_multimap : std::false_type {};
 
-template<typename KeyT, typename ValueT>
-struct is_multimap<std::multimap<KeyT, ValueT>> {
+template<typename KeyT, typename ValueT, typename CompareT, typename AllocatorT>
+struct is_multimap<std::multimap<KeyT, ValueT, CompareT, AllocatorT>> {
 	using key_type = KeyT;
 	using value_type = ValueT;
 	static constexpr bool value{ true };
@@ -240,8 +240,8 @@ struct is_multimap<std::multimap<KeyT, ValueT>> {
 template<typename T>
 struct is_unordered_map : std::false_type {};
 
-template<typename KeyT, typename ValueT>
-struct is_unordered_map<std::unordered_map<KeyT, ValueT>> {
+template<typename KeyT, typename ValueT, typename HashT, typename KeyEqualT, typename AllocatorT>
+struct is_unordered_map<std::unordered_map<KeyT, ValueT, HashT, KeyEqualT, AllocatorT>> {
 	using key_type = KeyT;
 	using value_type = ValueT;
 	static constexpr bool value{ true };
@@ -252,8 +252,8 @@ struct is_unordered_map<std::unordered_map<KeyT, ValueT>> {
 template<typename T>
 struct is_unordered_multimap : std::false_type {};
 
-template<typename KeyT, typename ValueT>
-struct is_unordered_multimap<std::unordered_multimap<KeyT, ValueT>> {
+template<typename KeyT, typename ValueT, typename HashT, typename KeyEqualT, typename AllocatorT>
+struct is_unordered_multimap<std::unordered_multimap<KeyT, ValueT, HashT, KeyEqualT, AllocatorT>> {
 	using key_type = KeyT;
 	using value_type = ValueT;
 	static constexpr bool value{ true };
@@ -266,8 +266,8 @@ struct is_unordered_multimap<std::unordered_multimap<KeyT, ValueT>> {
 template<typename T>
 struct is_associative_container : std::false_type {};
 
-template<typename KeyT, typename ValueT>
-struct is_associative_container<std::map<KeyT, ValueT>> {
+template<typename KeyT, typename ValueT, typename CompareT, typename AllocatorT>
+struct is_associative_container<std::map<KeyT, ValueT, CompareT, AllocatorT>> {
 	using key_type = KeyT;
 	using value_type = ValueT;
 	static constexpr bool value{ true };
@@ -275,8 +275,8 @@ struct is_associative_container<std::map<KeyT, ValueT>> {
 	constexpr bool operator()() const noexcept { return true; }
 };
 
-template<typename KeyT, typename ValueT>
-struct is_associative_container<std::unordered_map<KeyT, ValueT>> {
+template<typename KeyT, typename ValueT, typename HashT, typename KeyEqualT, typename AllocatorT>
+struct is_associative_container<std::unordered_map<KeyT, ValueT, HashT, KeyEqualT, AllocatorT>> {
 	using key_type = KeyT;
 	using value_type = ValueT;
 	static constexpr bool value{ true };
