@@ -101,7 +101,7 @@ public:
 	template<typename T,
 		typename std::enable_if<is_backing<typename std::decay<T>::type>::value
 		&& !is_sequence_container<typename std::decay<T>::type>::value
-		&& (!is_associative_container<typename std::decay<T>::type>::value || std::is_same<typename remove_cvref<T>::type, map_type>::value)>::type* = nullptr>
+		&& (!is_associative_container<typename std::decay<T>::type>::value || std::is_same<typename std::remove_cvref<T>::type, map_type>::value)>::type* = nullptr>
 	object(T&& in_value)
 		: m_value{ typename is_backing<typename std::decay<T>::type>::type{ std::forward<T>(in_value) } } {
 		// Empty ctor body
@@ -140,10 +140,10 @@ public:
 
 	// Non-map_type associative containers (container<string_type, T>)
 	template<typename T,
-		typename std::enable_if<is_associative_container<typename remove_cvref<T>::type>::value
-			&& (std::is_convertible<typename is_associative_container<typename remove_cvref<T>::type>::key_type, string_type>::value
-			|| std::is_convertible<typename is_associative_container<typename remove_cvref<T>::type>::key_type, string_view_type>::value)
-			&& !std::is_same<typename is_associative_container<typename remove_cvref<T>::type>::value_type, object>::value>::type* = nullptr>
+		typename std::enable_if<is_associative_container<typename std::remove_cvref<T>::type>::value
+			&& (std::is_convertible<typename is_associative_container<typename std::remove_cvref<T>::type>::key_type, string_type>::value
+			|| std::is_convertible<typename is_associative_container<typename std::remove_cvref<T>::type>::key_type, string_view_type>::value)
+			&& !std::is_same<typename is_associative_container<typename std::remove_cvref<T>::type>::value_type, object>::value>::type* = nullptr>
 	object(T&& in_value)
 		: m_value{ map_type{} } {
 		auto& map = std::get<map_type>(m_value);
@@ -473,6 +473,25 @@ private:
 	// This may be a good justification for separate 'xml_config' and 'xml' parsers, as config files are easier to
 	// represent as a map, whereas an actual xml document is sequenced
 }; // object
+
+namespace container {
+
+template<typename ContainerT, typename LeftT, typename RightT,
+	typename std::enable_if_t<std::is_same_v<ContainerT, object>>* = nullptr>
+constexpr void push(ContainerT& inout_container, LeftT&& in_key, RightT&& in_value) {
+	auto object_type = inout_container.type();
+	if (object_type == object::type::null || object_type == object::type::map) {
+		// Push to map if null or map type
+		inout_container[in_key] = in_value;
+	}
+	else if (object_type == object::type::array) {
+		// Push to back of array if array type
+		inout_container[inout_container.size()][in_key] = in_value;
+	}
+	// else // do nothing; pushing a key/value pair isn't valid here
+}
+
+} // namespace container
 
 } // namespace jessilib
 

@@ -237,68 +237,71 @@ constexpr shrink_sequence_tree_member<CharT> make_octal_sequence_pair() {
 	};
 }
 
+template<typename CharT, size_t MaxDigitsV, bool ExactDigitsV, bool IsUnicode>
+constexpr bool hex_shrink_sequence_action(CharT*& in_write_head, std::basic_string_view<CharT>& read_view) {
+	// Does not modify
+	auto read_hex = [](uint32_t& out_value, std::basic_string_view<CharT> in_view, size_t max_digits) constexpr {
+		size_t result{};
+		int hex_value;
+		out_value = 0;
+		while (result != max_digits
+			&& !in_view.empty()) {
+			hex_value = as_base(in_view.front(), 16); // hexadecimal characters are always 1 unit
+			if (hex_value < 0) {
+				// Not a hexadecimal character; push what we have and handle this
+				return result;
+			}
+
+			out_value <<= 4;
+			out_value |= hex_value;
+
+			in_view.remove_prefix(1);
+			++result;
+		}
+
+		// Number of elements that are hexadecimal digits
+		return result;
+	};
+
+	// Read in hex value
+	uint32_t hex_value;
+	size_t units_read = read_hex(hex_value, read_view, MaxDigitsV);
+
+	// Sanity check digits read
+	if constexpr(ExactDigitsV) {
+		if (units_read != MaxDigitsV) {
+			// We expected example MaxDigitsV digits; fail
+			return false;
+		}
+	}
+	else {
+		if (units_read == 0) {
+			// We didn't read any digits; fail
+			return false;
+		}
+	}
+
+	// We read an acceptable number of digits; write the unit and call it a day
+	read_view.remove_prefix(units_read);
+	if constexpr (IsUnicode) {
+		in_write_head += encode_codepoint(in_write_head, hex_value);
+	}
+	else {
+		static_assert(MaxDigitsV <= sizeof(CharT) * 2);
+		*in_write_head = static_cast<CharT>(hex_value);
+		++in_write_head;
+	}
+
+	return true;
+}
+
 template<typename CharT, char32_t InCodepointV, size_t MaxDigitsV, bool ExactDigitsV, bool IsUnicode>
 constexpr shrink_sequence_tree_member<CharT> make_hex_sequence_pair() {
 	static_assert(MaxDigitsV > 0);
 
 	return {
 		InCodepointV,
-		[](CharT*& in_write_head, std::basic_string_view<CharT>& read_view) constexpr {
-			// Does not modify
-			auto read_hex = [](uint32_t& out_value, std::basic_string_view<CharT> in_view, size_t max_digits) {
-				size_t result{};
-				int hex_value;
-				out_value = 0;
-				while (result != max_digits
-					&& !in_view.empty()) {
-					hex_value = as_base(in_view.front(), 16); // hexadecimal characters are always 1 unit
-					if (hex_value < 0) {
-						// Not a hexadecimal character; push what we have and handle this
-						return result;
-					}
-
-					out_value <<= 4;
-					out_value |= hex_value;
-
-					in_view.remove_prefix(1);
-					++result;
-				}
-
-				// Number of elements that are hexadecimal digits
-				return result;
-			};
-
-			// Read in hex value
-			uint32_t hex_value;
-			size_t units_read = read_hex(hex_value, read_view, MaxDigitsV);
-
-			// Sanity check digits read
-			if constexpr(ExactDigitsV) {
-				if (units_read != MaxDigitsV) {
-					// We expected example MaxDigitsV digits; fail
-					return false;
-				}
-			}
-			else {
-				if (units_read == 0) {
-					// We didn't read any digits; fail
-					return false;
-				}
-			}
-
-			// We read an acceptable number of digits; write the unit and call it a day
-			read_view.remove_prefix(units_read);
-			if constexpr (IsUnicode) {
-				in_write_head += encode_codepoint(in_write_head, hex_value);
-			}
-			else {
-				static_assert(MaxDigitsV <= sizeof(CharT) * 2);
-				*in_write_head = static_cast<CharT>(hex_value);
-				++in_write_head;
-			}
-
-			return true;
-		}
+		hex_shrink_sequence_action<CharT, MaxDigitsV, ExactDigitsV, IsUnicode>
 	};
 }
 
@@ -393,37 +396,5 @@ constexpr bool apply_cpp_escape_sequences(std::basic_string<CharT>& inout_string
 
 	return apply_shrink_sequence_tree<CharT, cpp_escapes_root_tree<CharT>, std::size(cpp_escapes_root_tree<CharT>)>(inout_string);
 }
-
-/**
- * Query string escape sequence parser
- */
-
-template<typename CharT,
-	std::enable_if_t<sizeof(CharT) == 1>* = nullptr> // make_hex_sequence_pair isn't going to play well with other types
-static constexpr shrink_sequence_tree<CharT> http_query_escapes_root_tree{
-	make_hex_sequence_pair<CharT, U'%', 2, true, false>(),
-	make_simple_sequence_pair<CharT, U'+', ' '>()
-};
-static_assert(is_sorted<char, http_query_escapes_root_tree<char>, std::size(http_query_escapes_root_tree<char>)>(), "Tree must be pre-sorted");
-static_assert(is_sorted<char8_t, http_query_escapes_root_tree<char8_t>, std::size(http_query_escapes_root_tree<char8_t>)>(), "Tree must be pre-sorted");
-
-template<typename CharT,
-    std::enable_if_t<sizeof(CharT) == 1>* = nullptr>
-constexpr bool deserialize_http_query(std::basic_string<CharT>& inout_string) {
-	return apply_shrink_sequence_tree<CharT, http_query_escapes_root_tree<CharT>, std::size(http_query_escapes_root_tree<CharT>)>(inout_string);
-}
-
-// TODO: decide whether to take this approach, where query strings are assumed to represent UTF-8 text data, OR implement
-// such that calling deserialize_http_query will assume the relevant encoding (i.e: calling with char16_t would read in
-// escaped query values as bytes in codepoint char16_t, rather than utf-8 encoding sequence)
-/*template<typename CharT,
-	std::enable_if_t<sizeof(CharT) != 1>* = nullptr>
-bool deserialize_http_query(std::basic_string<CharT>& inout_string) {
-	//TODO: optimize this?
-	std::basic_string<char8_t> u8query_string = string_cast<char8_t>(inout_string);
-	bool result = deserialize_http_query<char8_t>(u8query_string);
-	inout_string = string_cast<CharT>(u8query_string);
-	return result;
-}*/
 
 } // namespace jessilib

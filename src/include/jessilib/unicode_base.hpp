@@ -168,6 +168,62 @@ char32_t fold(char32_t in_codepoint); // Folds codepoint for case-insensitive ch
 constexpr int as_base(char32_t in_character, unsigned int base); // The value represented by in_character in terms of base if valid, -1 otherwise
 
 /**
+ * Checks if two codepoints are equal to each-other (case insensitive)
+ *
+ * @param lhs First codepoint to compare
+ * @param rhs Second codepoint to compare
+ * @return True if the characters are equal, false otherwise
+ */
+inline bool equalsi(char32_t lhs, char32_t rhs) {
+	return lhs == rhs
+		|| fold(lhs) == fold(rhs);
+}
+
+template<char32_t InCodepointV>
+struct codepoint_info {
+private:
+	template<typename CharT>
+	static constexpr size_t encode_codepoint_length(char32_t in_codepoint) {
+		encode_buffer_type<CharT> buffer{};
+		return encode_codepoint(buffer, in_codepoint);
+	}
+
+public:
+	static constexpr char32_t value = InCodepointV;
+	template<typename CharT>
+	static constexpr size_t encode_length = encode_codepoint_length<CharT>(InCodepointV);
+
+	template<typename CharT>
+	using encode_buffer = CharT[encode_length<CharT>];
+
+	static constexpr size_t utf8_length = encode_length<char8_t>;
+	static constexpr size_t utf16_length = encode_length<char16_t>;
+	static constexpr size_t utf32_length = encode_length<char32_t>;
+	static constexpr size_t wchar_length = encode_length<wchar_t>;
+
+	using utf8_buffer = char8_t[utf8_length];
+	using utf16_buffer = char16_t[utf16_length];
+	using utf32_buffer = char32_t[utf32_length];
+	using wchar_buffer = wchar_t[wchar_length];
+
+	static constexpr void encode(utf8_buffer& buffer) {
+		encode_codepoint(buffer, InCodepointV);
+	}
+
+	static constexpr void encode(utf16_buffer& buffer) {
+		encode_codepoint(buffer, InCodepointV);
+	}
+
+	static constexpr void encode(utf32_buffer& buffer) {
+		encode_codepoint(buffer, InCodepointV);
+	}
+
+	static constexpr void encode(wchar_buffer& buffer) {
+		encode_codepoint(buffer, InCodepointV);
+	}
+};
+
+/**
  * Inline constexpr encode implementation
  */
 

@@ -25,6 +25,12 @@
 using namespace jessilib;
 using namespace std::literals;
 
+static_assert(codepoint_info<U'\n'>::utf8_length == 1);
+static_assert(codepoint_info<U'\n'>::utf16_length == 1);
+static_assert(codepoint_info<U'\n'>::utf32_length == 1);
+static_assert(codepoint_info<U'\n'>::wchar_length == 1);
+static_assert(codepoint_info<U'\n'>::encode_length<char8_t> == 1);
+
 /** encode_codepoint */
 
 TEST(UTF8Test, encode_codepoint) {
