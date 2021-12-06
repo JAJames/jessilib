@@ -25,7 +25,7 @@ using namespace std::literals;
 // Compile-time tests for constexpr on compilers which support C++20 constexpr std::string
 #ifdef __cpp_lib_constexpr_string
 constexpr std::string query_constexpr(std::string_view in_expression) {
-	std::string result{ in_expression };
+	std::string result{ static_cast<std::string>(in_expression) };
 	jessilib::deserialize_http_query(result);
 	return result;
 }
