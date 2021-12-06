@@ -58,6 +58,7 @@ TEST(JsonParser, serialize_string) {
 
 	EXPECT_EQ(parser.serialize(u8"text"), R"json("text")json");
 	expect_eq(parser.serialize(u8"\"text\""), R"json("\"text\"")json");
+	expect_eq(parser.serialize(u8"\"te\x01xt\""), R"json("\"te\u0001xt\"")json");
 	expect_eq(parser.serialize(u8"\"te\x10xt\""), R"json("\"te\u0010xt\"")json");
 }
 

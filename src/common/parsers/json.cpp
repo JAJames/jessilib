@@ -30,74 +30,37 @@ std::string make_json_string(std::u8string_view in_string) {
 	result.reserve(in_string.size() + 2);
 	result = '\"';
 
-	while (!in_string.empty()) {
-		if (in_string.front() == '\\') { // backslash
+	decode_result decode;
+	while ((decode = decode_codepoint(in_string)).units != 0) {
+		if (decode.codepoint == U'\\') { // backslash
 			result += '\\';
 			result += '\\';
 		}
-		else if (in_string.front() == '\"') { // quotation
+		else if (decode.codepoint == U'\"') { // quotation
 			result += '\\';
 			result += '\"';
 		}
-		else if (in_string.front() < 0x20) { // control characters
+		else if (decode.codepoint < 0x20) { // control characters
 			result += "\\u0000"sv;
 
 			// overwrite last 2 zeroes with correct hexadecimal sequence
 			char* data_end = result.data() + result.size();
-			char* data = data_end - 2; // TODO: this isn't correct, is it? to_chars may only write 1 char in many cases
-			std::to_chars(data, data_end, static_cast<char>(in_string.front()), 16); // TODO: use decode_codepoint
-		}
-		else if ((in_string.front() & 0x80) != 0) { // UTF-8 sequence; copy to bypass above processing
-			if ((in_string.front() & 0x40) != 0) {
-				// this is a 2+ byte sequence
+			char* data = data_end - 2; // Will only ever use 2 chars
+			auto to_chars_result = std::to_chars(data, data_end, static_cast<uint32_t>(decode.codepoint), 16);
+			if (to_chars_result.ec == std::errc{} && to_chars_result.ptr != data_end) {
+				// Only 1 byte written; shift it over
+				*to_chars_result.ptr = *(to_chars_result.ptr - 1);
 
-				if ((in_string.front() & 0x20) != 0) {
-					// this is a 3+ byte sequence
-
-					if ((in_string.front() & 0x10) != 0) {
-						// this is a 4 byte sequence
-						if (in_string.size() < 4) {
-							// Invalid sequence encountered (first byte indicates 4 bytes, but less than 4 available)
-							break;
-						}
-
-						// This is a 4-byte sequence
-						result.append(reinterpret_cast<const char*>(in_string.data()), 4);
-						in_string.remove_prefix(4);
-						continue;
-					}
-
-					if (in_string.size() < 3) {
-						// Invalid sequence encountered (first byte indicates 3 bytes, but less than 3 available)
-						break;
-					}
-
-					// This is a 3-byte sequence
-					result.append(reinterpret_cast<const char*>(in_string.data()), 3);
-					in_string.remove_prefix(3);
-					continue;
-				}
-
-				if (in_string.size() < 2) {
-					// Invalid sequence encountered (first byte indicates 2 bytes, but less than 2 available)
-					break;
-				}
-
-				// This is a 2-byte sequence
-				result.append(reinterpret_cast<const char*>(in_string.data()), 2);
-				in_string.remove_prefix(2);
-				continue;
+				// And fill in the zeroes
+				*(to_chars_result.ptr - 1) = '0';
 			}
-
-			// Invalid sequence encountered (first bit is 1, but not second)
-			break;
 		}
 		else {
-			// Character in standard ASCII table
-			result += static_cast<char>(in_string.front());
+			// Valid UTF-8 sequence; copy it over
+			result.append(reinterpret_cast<const char*>(in_string.data()), decode.units);
 		}
 
-		in_string.remove_prefix(1);
+		in_string.remove_prefix(decode.units);
 	}
 
 	result += '\"';
