@@ -75,7 +75,7 @@ TEST(AppParametersTest, path_only) {
 	ArgWrapper args{ "/path/to/exe" };
 	app_parameters parameters{ args.argc(), args.argv() };
 
-	EXPECT_EQ(parameters.path(), "/path/to/exe");
+	EXPECT_EQ(parameters.path(), u8"/path/to/exe");
 	EXPECT_TRUE(parameters.arguments().empty());
 	EXPECT_TRUE(parameters.switches().empty());
 	EXPECT_TRUE(parameters.switches_set().empty());
@@ -83,7 +83,7 @@ TEST(AppParametersTest, path_only) {
 
 	auto obj = parameters.as_object();
 	EXPECT_FALSE(obj.null());
-	EXPECT_EQ(obj["Path"], "/path/to/exe");
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
 }
 
 TEST(AppParametersTest, single_switch) {
@@ -98,9 +98,9 @@ TEST(AppParametersTest, single_switch) {
 
 	auto obj = parameters.as_object();
 	EXPECT_FALSE(obj.null());
-	EXPECT_EQ(obj["Path"], "/path/to/exe");
-	EXPECT_EQ(obj["Args"], object{ std::vector<std::string>{ "-switch" } });
-	EXPECT_EQ(obj["Switches"], object{ std::vector<std::string>{ "switch" } });
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+	EXPECT_EQ(obj[u8"Args"], object{ std::vector<std::u8string>{ u8"-switch" } });
+	EXPECT_EQ(obj[u8"Switches"], object{ std::vector<std::u8string>{ u8"switch" } });
 }
 
 TEST(AppParametersTest, double_switch) {
@@ -114,12 +114,12 @@ TEST(AppParametersTest, double_switch) {
 	EXPECT_TRUE(parameters.values().empty());
 
 	auto obj = parameters.as_object();
-	std::vector<std::string> expected_args{ "-switch1", "--switch2" };
-	std::vector<std::string> expected_switches{ "switch1", "switch2" };
+	std::vector<std::u8string> expected_args{ u8"-switch1", u8"--switch2" };
+	std::vector<std::u8string> expected_switches{ u8"switch1", u8"switch2" };
 	EXPECT_FALSE(obj.null());
-	EXPECT_EQ(obj["Path"], "/path/to/exe");
-	EXPECT_EQ(obj["Args"], expected_args);
-	EXPECT_EQ(obj["Switches"], expected_switches);
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+	EXPECT_EQ(obj[u8"Args"], expected_args);
+	EXPECT_EQ(obj[u8"Switches"], expected_switches);
 }
 
 TEST(AppParametersTest, duplicate_switch) {
@@ -133,12 +133,12 @@ TEST(AppParametersTest, duplicate_switch) {
 	EXPECT_TRUE(parameters.values().empty());
 
 	auto obj = parameters.as_object();
-	std::vector<std::string> expected_args{ "-switch", "--switch" };
-	std::vector<std::string> expected_switches{ "switch", "switch" };
+	std::vector<std::u8string> expected_args{ u8"-switch", u8"--switch" };
+	std::vector<std::u8string> expected_switches{ u8"switch", u8"switch" };
 	EXPECT_FALSE(obj.null());
-	EXPECT_EQ(obj["Path"], "/path/to/exe");
-	EXPECT_EQ(obj["Args"], expected_args);
-	EXPECT_EQ(obj["Switches"], expected_switches);
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+	EXPECT_EQ(obj[u8"Args"], expected_args);
+	EXPECT_EQ(obj[u8"Switches"], expected_switches);
 }
 
 TEST(AppParametersTest, single_value) {
@@ -152,12 +152,12 @@ TEST(AppParametersTest, single_value) {
 	EXPECT_EQ(parameters.values().size(), 1U);
 
 	auto obj = parameters.as_object();
-	std::vector<std::string> expected_args{ "-key", "value" };
-	std::map<std::string, object> expected_values{ { "key", "value" } };
+	std::vector<std::u8string> expected_args{ u8"-key", u8"value" };
+	std::map<std::u8string, object> expected_values{ { u8"key", u8"value" } };
 	EXPECT_FALSE(obj.null());
-	EXPECT_EQ(obj["Path"], "/path/to/exe");
-	EXPECT_EQ(obj["Args"], expected_args);
-	EXPECT_EQ(obj["Values"], expected_values);
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+	EXPECT_EQ(obj[u8"Args"], expected_args);
+	EXPECT_EQ(obj[u8"Values"], expected_values);
 }
 
 TEST(AppParametersTest, single_value_eq) {
@@ -171,12 +171,12 @@ TEST(AppParametersTest, single_value_eq) {
 	EXPECT_EQ(parameters.values().size(), 1U);
 
 	auto obj = parameters.as_object();
-	std::vector<std::string> expected_args{ "-key=value" };
-	std::map<std::string, object> expected_values{ { "key", "value" } };
+	std::vector<std::u8string> expected_args{ u8"-key=value" };
+	std::map<std::u8string, object> expected_values{ { u8"key", u8"value" } };
 	EXPECT_FALSE(obj.null());
-	EXPECT_EQ(obj["Path"], "/path/to/exe");
-	EXPECT_EQ(obj["Args"], expected_args);
-	EXPECT_EQ(obj["Values"], expected_values);
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+	EXPECT_EQ(obj[u8"Args"], expected_args);
+	EXPECT_EQ(obj[u8"Values"], expected_values);
 }
 
 TEST(AppParametersTest, multiword_value) {
@@ -190,12 +190,12 @@ TEST(AppParametersTest, multiword_value) {
 	EXPECT_EQ(parameters.values().size(), 1U);
 
 	auto obj = parameters.as_object();
-	std::vector<std::string> expected_args{ "-key", "valuePart1", "valuePart2" };
-	std::map<std::string, object> expected_values{ { "key", "valuePart1 valuePart2" } };
+	std::vector<std::u8string> expected_args{ u8"-key", u8"valuePart1", u8"valuePart2" };
+	std::map<std::u8string, object> expected_values{ { u8"key", u8"valuePart1 valuePart2" } };
 	EXPECT_FALSE(obj.null());
-	EXPECT_EQ(obj["Path"], "/path/to/exe");
-	EXPECT_EQ(obj["Args"], expected_args);
-	EXPECT_EQ(obj["Values"], expected_values);
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+	EXPECT_EQ(obj[u8"Args"], expected_args);
+	EXPECT_EQ(obj[u8"Values"], expected_values);
 }
 
 TEST(AppParametersTest, multiword_value_eq) {
@@ -209,12 +209,12 @@ TEST(AppParametersTest, multiword_value_eq) {
 	EXPECT_EQ(parameters.values().size(), 1U);
 
 	auto obj = parameters.as_object();
-	std::vector<std::string> expected_args{ "-key=valuePart1", "valuePart2" };
-	std::map<std::string, object> expected_values{ { "key", "valuePart1 valuePart2" } };
+	std::vector<std::u8string> expected_args{ u8"-key=valuePart1", u8"valuePart2" };
+	std::map<std::u8string, object> expected_values{ { u8"key", u8"valuePart1 valuePart2" } };
 	EXPECT_FALSE(obj.null());
-	EXPECT_EQ(obj["Path"], "/path/to/exe");
-	EXPECT_EQ(obj["Args"], expected_args);
-	EXPECT_EQ(obj["Values"], expected_values);
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+	EXPECT_EQ(obj[u8"Args"], expected_args);
+	EXPECT_EQ(obj[u8"Values"], expected_values);
 }
 
 TEST(AppParametersTest, double_value) {
@@ -228,12 +228,12 @@ TEST(AppParametersTest, double_value) {
 	EXPECT_EQ(parameters.values().size(), 2U);
 
 	auto obj = parameters.as_object();
-	std::vector<std::string> expected_args{ "-key", "value", "--key2", "value2" };
-	std::map<std::string, object> expected_values{ { "key", "value" }, { "key2", "value2" } };
+	std::vector<std::u8string> expected_args{ u8"-key", u8"value", u8"--key2", u8"value2" };
+	std::map<std::u8string, object> expected_values{ { u8"key", u8"value" }, { u8"key2", u8"value2" } };
 	EXPECT_FALSE(obj.null());
-	EXPECT_EQ(obj["Path"], "/path/to/exe");
-	EXPECT_EQ(obj["Args"], expected_args);
-	EXPECT_EQ(obj["Values"], expected_values);
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+	EXPECT_EQ(obj[u8"Args"], expected_args);
+	EXPECT_EQ(obj[u8"Values"], expected_values);
 }
 
 TEST(AppParametersTest, double_value_eq) {
@@ -247,12 +247,12 @@ TEST(AppParametersTest, double_value_eq) {
 	EXPECT_EQ(parameters.values().size(), 2U);
 
 	auto obj = parameters.as_object();
-	std::vector<std::string> expected_args{ "-key=value", "--key2=value2" };
-	std::map<std::string, object> expected_values{ { "key", "value" }, { "key2", "value2" } };
+	std::vector<std::u8string> expected_args{ u8"-key=value", u8"--key2=value2" };
+	std::map<std::u8string, object> expected_values{ { u8"key", u8"value" }, { u8"key2", u8"value2" } };
 	EXPECT_FALSE(obj.null());
-	EXPECT_EQ(obj["Path"], "/path/to/exe");
-	EXPECT_EQ(obj["Args"], expected_args);
-	EXPECT_EQ(obj["Values"], expected_values);
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+	EXPECT_EQ(obj[u8"Args"], expected_args);
+	EXPECT_EQ(obj[u8"Values"], expected_values);
 }
 
 TEST(AppParametersTest, switch_and_value) {
@@ -266,16 +266,16 @@ TEST(AppParametersTest, switch_and_value) {
 	EXPECT_EQ(parameters.values().size(), 1U);
 
 	auto obj = parameters.as_object();
-	std::vector<std::string> expected_args{ "--switch", "-key", "value" };
-	std::vector<std::string> expected_switches{ "switch" };
-	std::map<std::string, object> expected_values{ { "key", "value" } };
+	std::vector<std::u8string> expected_args{ u8"--switch", u8"-key", u8"value" };
+	std::vector<std::u8string> expected_switches{ u8"switch" };
+	std::map<std::u8string, object> expected_values{ { u8"key", u8"value" } };
 	EXPECT_FALSE(obj.null());
-	EXPECT_EQ(obj["Path"], "/path/to/exe");
-	EXPECT_EQ(obj["Args"], expected_args);
-	EXPECT_EQ(obj["Switches"], expected_switches);
-	EXPECT_EQ(obj["Values"], expected_values);
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+	EXPECT_EQ(obj[u8"Args"], expected_args);
+	EXPECT_EQ(obj[u8"Switches"], expected_switches);
+	EXPECT_EQ(obj[u8"Values"], expected_values);
 
-	EXPECT_TRUE(parameters.has_switch("switch"));
-	EXPECT_FALSE(parameters.has_switch("switch2"));
-	EXPECT_EQ(parameters.get_value("key"), "value");
+	EXPECT_TRUE(parameters.has_switch(u8"switch"));
+	EXPECT_FALSE(parameters.has_switch(u8"switch2"));
+	EXPECT_EQ(parameters.get_value(u8"key"), u8"value");
 }

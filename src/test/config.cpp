@@ -55,14 +55,14 @@ TEST(ConfigTest, get_format) {
 
 TEST(ConfigTest, read_object) {
 	std::filesystem::path file_path = make_tmp_file("read_object.test", "some_data");
-	EXPECT_EQ(config::read_object(file_path).get<std::string>(), "some_data");
+	EXPECT_EQ(config::read_object(file_path).get<std::u8string>(), u8"some_data");
 }
 
 TEST(ConfigTest, write_object) {
 	std::filesystem::path file_path = make_tmp_file("write_object.test", "some_data");
 	config::write_object(object{}, file_path);
 
-	EXPECT_EQ(config::read_object(file_path).get<std::string>(), "serialize_result");
+	EXPECT_EQ(config::read_object(file_path).get<std::u8string>(), u8"serialize_result");
 }
 
 TEST(ConfigTest, load) {
@@ -75,7 +75,7 @@ TEST(ConfigTest, load) {
 	l_config.load(file_path);
 
 	// Verify
-	EXPECT_EQ(l_config.data().get<std::string>(), "some_data");
+	EXPECT_EQ(l_config.data().get<std::u8string>(), u8"some_data");
 	EXPECT_EQ(l_config.filename(), file_path);
 	EXPECT_EQ(l_config.format(), "test");
 }
@@ -94,25 +94,25 @@ TEST(ConfigTest, reload) {
 
 	// Reload data from disk and compare
 	l_config.reload();
-	EXPECT_EQ(l_config.data().get<std::string>(), "some_other_data");
+	EXPECT_EQ(l_config.data().get<std::u8string>(), u8"some_other_data");
 }
 
 TEST(ConfigTest, set_data) {
 	config l_config;
 
-	l_config.set_data("some_data");
-	EXPECT_EQ(l_config.data().get<std::string>(), "some_data");
+	l_config.set_data(u8"some_data");
+	EXPECT_EQ(l_config.data().get<std::u8string>(), u8"some_data");
 }
 
 TEST(ConfigTest, write) {
 	config l_config;
 	std::filesystem::path file_path = make_tmp_file("write.test", "");
 
-	l_config.set_data("some_data");
+	l_config.set_data(u8"some_data");
 	l_config.write(file_path);
 
 	l_config.reload();
-	EXPECT_EQ(l_config.data().get<std::string>(), "some_data");
+	EXPECT_EQ(l_config.data().get<std::u8string>(), u8"some_data");
 }
 
 TEST(ConfigTest, rewrite) {
@@ -125,12 +125,12 @@ TEST(ConfigTest, rewrite) {
 	l_config.load(file_path);
 
 	// Set some other data
-	l_config.set_data("some_other_data");
+	l_config.set_data(u8"some_other_data");
 
 	// Write data to disk
 	l_config.write();
 
 	// Reload from disk and verify
 	l_config.reload();
-	EXPECT_EQ(l_config.data().get<std::string>(), "some_other_data");
+	EXPECT_EQ(l_config.data().get<std::u8string>(), u8"some_other_data");
 }

@@ -56,9 +56,9 @@ void expect_eq(LeftT in_left, RightT in_right) {
 TEST(JsonParser, serialize_string) {
 	json_parser parser;
 
-	EXPECT_EQ(parser.serialize("text"), R"json("text")json");
-	expect_eq(parser.serialize("\"text\""), R"json("\"text\"")json");
-	expect_eq(parser.serialize("\"te\x10xt\""), R"json("\"te\u0010xt\"")json");
+	EXPECT_EQ(parser.serialize(u8"text"), R"json("text")json");
+	expect_eq(parser.serialize(u8"\"text\""), R"json("\"text\"")json");
+	expect_eq(parser.serialize(u8"\"te\x10xt\""), R"json("\"te\u0010xt\"")json");
 }
 
 TEST(JsonParser, serialize_array) {
@@ -66,7 +66,7 @@ TEST(JsonParser, serialize_array) {
 	std::vector<object> array {
 		true,
 		1234,
-		"text",
+		u8"text",
 		object{}
 	};
 
@@ -78,10 +78,10 @@ TEST(JsonParser, serialize_map) {
 	json_parser parser;
 	object obj;
 
-	obj["some_bool"] = true;
-	obj["some_int"] = 1234;
-	obj["some_string"] = "text";
-	obj["some_null"];
+	obj[u8"some_bool"] = true;
+	obj[u8"some_int"] = 1234;
+	obj[u8"some_string"] = u8"text";
+	obj[u8"some_null"];
 
 	EXPECT_EQ(parser.serialize(obj),
 		R"json({"some_bool":true,"some_int":1234,"some_null":null,"some_string":"text"})json");
@@ -120,7 +120,7 @@ TEST(JsonParser, deserialize_decimal) {
 TEST(JsonParser, deserialize_string) {
 	json_parser parser;
 
-	EXPECT_EQ(parser.deserialize(R"json("text")json"sv), "text");
+	EXPECT_EQ(parser.deserialize(R"json("text")json"sv), u8"text");
 }
 
 TEST(JsonParser, deserialize_array) {
@@ -142,7 +142,7 @@ TEST(JsonParser, deserialize_array) {
 	EXPECT_EQ(array[2], 1234);
 	EXPECT_DOUBLE_EQ(array[3].get<double>(), 12.34);
 	EXPECT_DOUBLE_EQ(array[4].get<double>(), 0.1234);
-	EXPECT_EQ(array[5], "text");
+	EXPECT_EQ(array[5], u8"text");
 }
 
 TEST(JsonParser, deserialize_array_nested) {
@@ -174,11 +174,11 @@ TEST(JsonParser, deserialize_array_nested) {
 	EXPECT_EQ(array[4].size(), 0U);
 	EXPECT_FALSE(array[5].null());
 	ASSERT_EQ(array[5].size(), 1U);
-	EXPECT_EQ(array[5], std::vector<object>{ " text " });
-	EXPECT_EQ(array[5], std::vector<std::string>{ " text " });
+	EXPECT_EQ(array[5], std::vector<object>{ u8" text " });
+	EXPECT_EQ(array[5], std::vector<std::u8string>{ u8" text " });
 	EXPECT_DOUBLE_EQ(array[6].get<double>(), 12.34);
 	EXPECT_DOUBLE_EQ(array[7].get<double>(), 0.1234);
-	EXPECT_EQ(array[8], "text");
+	EXPECT_EQ(array[8], u8"text");
 
 	auto nested_array = array[3].get<std::vector<object>>();
 	ASSERT_EQ(nested_array.size(), 6U);
@@ -186,7 +186,7 @@ TEST(JsonParser, deserialize_array_nested) {
 	EXPECT_EQ(nested_array[1], 2);
 	EXPECT_EQ(nested_array[2], 3);
 	EXPECT_TRUE(nested_array[3].null());
-	EXPECT_EQ(nested_array[4], "text");
+	EXPECT_EQ(nested_array[4],u8"text");
 	std::vector<int> expected{ 5, 6, 7 };
 	EXPECT_EQ(nested_array[5], expected);
 }
@@ -205,12 +205,12 @@ TEST(JsonParser, deserialize_map) {
 
 	object obj = parser.deserialize(json_data);
 	EXPECT_EQ(obj.size(), 6U);
-	EXPECT_EQ(obj["some_true"], true);
-	EXPECT_EQ(obj["some_false"], false);
-	EXPECT_EQ(obj["some_int"], 1234);
-	EXPECT_DOUBLE_EQ(obj["some_double"].get<double>(), 12.34);
-	EXPECT_DOUBLE_EQ(obj["some_other_double"].get<double>(), 0.1234);
-	EXPECT_EQ(obj["some_text"], "text");
+	EXPECT_EQ(obj[u8"some_true"], true);
+	EXPECT_EQ(obj[u8"some_false"], false);
+	EXPECT_EQ(obj[u8"some_int"], 1234);
+	EXPECT_DOUBLE_EQ(obj[u8"some_double"].get<double>(), 12.34);
+	EXPECT_DOUBLE_EQ(obj[u8"some_other_double"].get<double>(), 0.1234);
+	EXPECT_EQ(obj[u8"some_text"], u8"text");
 }
 
 TEST(JsonParser, deserialize_map_nested) {
@@ -233,21 +233,21 @@ TEST(JsonParser, deserialize_map_nested) {
 
 	object obj = parser.deserialize(json_data);
 	EXPECT_EQ(obj.size(), 4U);
-	EXPECT_EQ(obj["some_text"], "text");
-	EXPECT_EQ(obj["some other text"], " asdf ");
+	EXPECT_EQ(obj[u8"some_text"], u8"text");
+	EXPECT_EQ(obj[u8"some other text"], u8" asdf ");
 
 	// some_object
-	EXPECT_FALSE(obj["some_object"].null());
-	EXPECT_EQ(obj["some_object"].size(), 1U);
-	EXPECT_FALSE(obj["some_object"]["some_null_object"].null());
-	EXPECT_EQ(obj["some_object"]["some_null_object"].size(), 0U);
+	EXPECT_FALSE(obj[u8"some_object"].null());
+	EXPECT_EQ(obj[u8"some_object"].size(), 1U);
+	EXPECT_FALSE(obj[u8"some_object"][u8"some_null_object"].null());
+	EXPECT_EQ(obj[u8"some_object"][u8"some_null_object"].size(), 0U);
 
 	// some_other_object
-	EXPECT_FALSE(obj["some_other_object"].null());
-	EXPECT_EQ(obj["some_other_object"].size(), 1U);
-	EXPECT_FALSE(obj["some_other_object"]["beans"].null());
-	EXPECT_EQ(obj["some_other_object"]["beans"].size(), 3U);
-	EXPECT_EQ(obj["some_other_object"]["beans"]["fruit"], true);
-	EXPECT_EQ(obj["some_other_object"]["beans"]["magical"], true);
-	EXPECT_EQ(obj["some_other_object"]["beans"]["makes toot"], true);
+	EXPECT_FALSE(obj[u8"some_other_object"].null());
+	EXPECT_EQ(obj[u8"some_other_object"].size(), 1U);
+	EXPECT_FALSE(obj[u8"some_other_object"][u8"beans"].null());
+	EXPECT_EQ(obj[u8"some_other_object"][u8"beans"].size(), 3U);
+	EXPECT_EQ(obj[u8"some_other_object"][u8"beans"][u8"fruit"], true);
+	EXPECT_EQ(obj[u8"some_other_object"][u8"beans"][u8"magical"], true);
+	EXPECT_EQ(obj[u8"some_other_object"][u8"beans"][u8"makes toot"], true);
 }

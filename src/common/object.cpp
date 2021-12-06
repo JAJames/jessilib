@@ -28,7 +28,7 @@ object::object(object&& in_object) {
 	m_value = std::move(in_object.m_value);
 }
 
-object::object(const char* in_str)
+object::object(const text_char_type* in_str)
 	: m_value{ string_type{ in_str } } {
 	// Empty ctor body
 }

@@ -27,19 +27,19 @@ using unsigned_char_t = unsigned char;
 using long_long_t = long long;
 using long_double_t = long double;
 
-using map_str_str = std::map<std::string, std::string>;
-using map_str_strv = std::map<std::string, std::string_view>;
-using map_str_obj = std::map<std::string, object>;
-using map_strv_str = std::map<std::string_view, std::string>;
-using map_strv_strv = std::map<std::string_view, std::string_view>;
-using map_strv_obj = std::map<std::string_view, object>;
+using map_str_str = std::map<std::u8string, std::u8string>;
+using map_str_strv = std::map<std::u8string, std::u8string_view>;
+using map_str_obj = std::map<std::u8string, object>;
+using map_strv_str = std::map<std::u8string_view, std::u8string>;
+using map_strv_strv = std::map<std::u8string_view, std::u8string_view>;
+using map_strv_obj = std::map<std::u8string_view, object>;
 
-using unordered_map_str_str = std::unordered_map<std::string, std::string>;
-using unordered_map_str_strv = std::unordered_map<std::string, std::string_view>;
-using unordered_map_str_obj = std::unordered_map<std::string, object>;
-using unordered_map_strv_str = std::unordered_map<std::string_view, std::string>;
-using unordered_map_strv_strv = std::unordered_map<std::string_view, std::string_view>;
-using unordered_map_strv_obj = std::unordered_map<std::string_view, object>;
+using unordered_map_str_str = std::unordered_map<std::u8string, std::u8string>;
+using unordered_map_str_strv = std::unordered_map<std::u8string, std::u8string_view>;
+using unordered_map_str_obj = std::unordered_map<std::u8string, object>;
+using unordered_map_strv_str = std::unordered_map<std::u8string_view, std::u8string>;
+using unordered_map_strv_strv = std::unordered_map<std::u8string_view, std::u8string_view>;
+using unordered_map_strv_obj = std::unordered_map<std::u8string_view, object>;
 
 /** basic tests; these test function calls against null objects and heavily test for compilation errors */
 
@@ -66,7 +66,7 @@ TEST(ObjectTest, basic_has) {
 	EXPECT_FALSE(obj.has<float>());
 	EXPECT_FALSE(obj.has<double>());
 	EXPECT_FALSE(obj.has<long double>());
-	EXPECT_FALSE(obj.has<std::string>());
+	EXPECT_FALSE(obj.has<std::u8string>());
 	EXPECT_FALSE(obj.has<object::array_type>());
 	EXPECT_FALSE(obj.has<object::map_type>());
 }
@@ -85,7 +85,7 @@ TEST(ObjectTest, basic_has_vector) {
 	EXPECT_FALSE(obj.has<std::vector<float>>());
 	EXPECT_FALSE(obj.has<std::vector<double>>());
 	EXPECT_FALSE(obj.has<std::vector<long double>>());
-	EXPECT_FALSE(obj.has<std::vector<std::string>>());
+	EXPECT_FALSE(obj.has<std::vector<std::u8string>>());
 	EXPECT_FALSE(obj.has<std::vector<object>>());
 }
 
@@ -103,7 +103,7 @@ TEST(ObjectTest, basic_has_list) {
 	EXPECT_FALSE(obj.has<std::list<float>>());
 	EXPECT_FALSE(obj.has<std::list<double>>());
 	EXPECT_FALSE(obj.has<std::list<long double>>());
-	EXPECT_FALSE(obj.has<std::list<std::string>>());
+	EXPECT_FALSE(obj.has<std::list<std::u8string>>());
 	EXPECT_FALSE(obj.has<std::list<object>>());
 }
 
@@ -121,7 +121,7 @@ TEST(ObjectTest, basic_has_forward_list) {
 	EXPECT_FALSE(obj.has<std::forward_list<float>>());
 	EXPECT_FALSE(obj.has<std::forward_list<double>>());
 	EXPECT_FALSE(obj.has<std::forward_list<long double>>());
-	EXPECT_FALSE(obj.has<std::forward_list<std::string>>());
+	EXPECT_FALSE(obj.has<std::forward_list<std::u8string>>());
 	EXPECT_FALSE(obj.has<std::forward_list<object>>());
 }
 
@@ -139,7 +139,7 @@ TEST(ObjectTest, basic_has_set) {
 	EXPECT_FALSE(obj.has<std::set<float>>());
 	EXPECT_FALSE(obj.has<std::set<double>>());
 	EXPECT_FALSE(obj.has<std::set<long double>>());
-	EXPECT_FALSE(obj.has<std::set<std::string>>());
+	EXPECT_FALSE(obj.has<std::set<std::u8string>>());
 	EXPECT_FALSE(obj.has<std::set<object>>());
 }
 
@@ -157,7 +157,7 @@ TEST(ObjectTest, basic_has_unordered_set) {
 	EXPECT_FALSE(obj.has<std::unordered_set<float>>());
 	EXPECT_FALSE(obj.has<std::unordered_set<double>>());
 	EXPECT_FALSE(obj.has<std::unordered_set<long double>>());
-	EXPECT_FALSE(obj.has<std::unordered_set<std::string>>());
+	EXPECT_FALSE(obj.has<std::unordered_set<std::u8string>>());
 	EXPECT_FALSE(obj.has<std::unordered_set<object>>());
 }
 
@@ -199,7 +199,7 @@ TEST(ObjectTest, basic_get) {
 	EXPECT_EQ(obj.get<float>(), float{});
 	EXPECT_EQ(obj.get<double>(), double{});
 	EXPECT_EQ(obj.get<long double>(), long_double_t{});
-	EXPECT_EQ(obj.get<std::string>(), std::string{});
+	EXPECT_EQ(obj.get<std::u8string>(), std::u8string{});
 	EXPECT_TRUE(obj.get<object::array_type>().empty());
 	EXPECT_TRUE(obj.get<object::map_type>().empty());
 }
@@ -218,7 +218,7 @@ TEST(ObjectTest, basic_get_vector) {
 	EXPECT_TRUE(obj.get<std::vector<float>>().empty());
 	EXPECT_TRUE(obj.get<std::vector<double>>().empty());
 	EXPECT_TRUE(obj.get<std::vector<long double>>().empty());
-	EXPECT_TRUE(obj.get<std::vector<std::string>>().empty());
+	EXPECT_TRUE(obj.get<std::vector<std::u8string>>().empty());
 	EXPECT_TRUE(obj.get<std::vector<object>>().empty());
 }
 
@@ -236,7 +236,7 @@ TEST(ObjectTest, basic_get_list) {
 	EXPECT_TRUE(obj.get<std::list<float>>().empty());
 	EXPECT_TRUE(obj.get<std::list<double>>().empty());
 	EXPECT_TRUE(obj.get<std::list<long double>>().empty());
-	EXPECT_TRUE(obj.get<std::list<std::string>>().empty());
+	EXPECT_TRUE(obj.get<std::list<std::u8string>>().empty());
 	EXPECT_TRUE(obj.get<std::list<object>>().empty());
 }
 
@@ -254,7 +254,7 @@ TEST(ObjectTest, basic_get_forward_list) {
 	EXPECT_TRUE(obj.get<std::forward_list<float>>().empty());
 	EXPECT_TRUE(obj.get<std::forward_list<double>>().empty());
 	EXPECT_TRUE(obj.get<std::forward_list<long double>>().empty());
-	EXPECT_TRUE(obj.get<std::forward_list<std::string>>().empty());
+	EXPECT_TRUE(obj.get<std::forward_list<std::u8string>>().empty());
 	EXPECT_TRUE(obj.get<std::forward_list<object>>().empty());
 }
 
@@ -272,7 +272,7 @@ TEST(ObjectTest, basic_get_set) {
 	EXPECT_TRUE(obj.get<std::set<float>>().empty());
 	EXPECT_TRUE(obj.get<std::set<double>>().empty());
 	EXPECT_TRUE(obj.get<std::set<long double>>().empty());
-	EXPECT_TRUE(obj.get<std::set<std::string>>().empty());
+	EXPECT_TRUE(obj.get<std::set<std::u8string>>().empty());
 	EXPECT_TRUE(obj.get<std::set<object>>().empty());
 }
 
@@ -290,7 +290,7 @@ TEST(ObjectTest, basic_get_multiset) {
 	EXPECT_TRUE(obj.get<std::multiset<float>>().empty());
 	EXPECT_TRUE(obj.get<std::multiset<double>>().empty());
 	EXPECT_TRUE(obj.get<std::multiset<long double>>().empty());
-	EXPECT_TRUE(obj.get<std::multiset<std::string>>().empty());
+	EXPECT_TRUE(obj.get<std::multiset<std::u8string>>().empty());
 	EXPECT_TRUE(obj.get<std::multiset<object>>().empty());
 }
 
@@ -308,7 +308,7 @@ TEST(ObjectTest, basic_get_unordered_set) {
 	EXPECT_TRUE(obj.get<std::unordered_set<float>>().empty());
 	EXPECT_TRUE(obj.get<std::unordered_set<double>>().empty());
 	EXPECT_TRUE(obj.get<std::unordered_set<long double>>().empty());
-	EXPECT_TRUE(obj.get<std::unordered_set<std::string>>().empty());
+	EXPECT_TRUE(obj.get<std::unordered_set<std::u8string>>().empty());
 	EXPECT_TRUE(obj.get<std::unordered_set<object>>().empty());
 }
 
@@ -326,7 +326,7 @@ TEST(ObjectTest, basic_get_unordered_multiset) {
 	EXPECT_TRUE(obj.get<std::unordered_multiset<float>>().empty());
 	EXPECT_TRUE(obj.get<std::unordered_multiset<double>>().empty());
 	EXPECT_TRUE(obj.get<std::unordered_multiset<long double>>().empty());
-	EXPECT_TRUE(obj.get<std::unordered_multiset<std::string>>().empty());
+	EXPECT_TRUE(obj.get<std::unordered_multiset<std::u8string>>().empty());
 	EXPECT_TRUE(obj.get<std::unordered_set<object>>().empty());
 }
 
@@ -351,21 +351,21 @@ TEST(ObjectTest, basic_value_constructor) {
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(float);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(double);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(long_double_t);
-	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::string);
+	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::u8string);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(object::array_type);
 
 	// const char*
 	{
-		object obj{ "" };
-		EXPECT_TRUE(obj.has<std::string>());
-		EXPECT_EQ(obj.get<std::string>(), std::string{});
+		object obj{ u8"" };
+		EXPECT_TRUE(obj.has<std::u8string>());
+		EXPECT_EQ(obj.get<std::u8string>(), std::u8string{});
 	}
 
-	// std::string_view
+	// std::u8string_view
 	{
-		object obj{ ""sv };
-		EXPECT_TRUE(obj.has<std::string>());
-		EXPECT_EQ(obj.get<std::string>(), std::string{});
+		object obj{ u8""sv };
+		EXPECT_TRUE(obj.has<std::u8string>());
+		EXPECT_EQ(obj.get<std::u8string>(), std::u8string{});
 	}
 }
 
@@ -381,7 +381,7 @@ TEST(ObjectTest, basic_value_constructor_vector) {
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::vector<float>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::vector<double>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::vector<long double>);
-	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::vector<std::string>);
+	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::vector<std::u8string>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::vector<object>);
 }
 
@@ -397,7 +397,7 @@ TEST(ObjectTest, basic_value_constructor_list) {
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::list<float>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::list<double>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::list<long double>);
-	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::list<std::string>);
+	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::list<std::u8string>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::list<object>);
 }
 
@@ -413,7 +413,7 @@ TEST(ObjectTest, basic_value_constructor_forward_list) {
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::forward_list<float>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::forward_list<double>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::forward_list<long double>);
-	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::forward_list<std::string>);
+	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::forward_list<std::u8string>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::forward_list<object>);
 }
 
@@ -429,7 +429,7 @@ TEST(ObjectTest, basic_value_constructor_set) {
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::set<float>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::set<double>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::set<long double>);
-	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::set<std::string>);
+	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::set<std::u8string>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::set<object>);
 }
 
@@ -445,7 +445,7 @@ TEST(ObjectTest, basic_value_constructor_multiset) {
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::multiset<float>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::multiset<double>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::multiset<long double>);
-	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::multiset<std::string>);
+	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::multiset<std::u8string>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::multiset<object>);
 }
 
@@ -461,7 +461,7 @@ TEST(ObjectTest, basic_value_constructor_unordered_set) {
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_set<float>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_set<double>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_set<long double>);
-	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_set<std::string>);
+	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_set<std::u8string>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_set<object>);
 }
 
@@ -477,7 +477,7 @@ TEST(ObjectTest, basic_value_constructor_unordered_multiset) {
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_multiset<float>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_multiset<double>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_multiset<long double>);
-	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_multiset<std::string>);
+	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_multiset<std::u8string>);
 	OBJECT_BASIC_VALUE_CONSTRUCTOR_TEST(std::unordered_set<object>);
 }
 
@@ -502,18 +502,18 @@ TEST(ObjectTest, basic_set) {
 	OBJECT_BASIC_SET_TEST(obj, float);
 	OBJECT_BASIC_SET_TEST(obj, double);
 	OBJECT_BASIC_SET_TEST(obj, long_double_t);
-	OBJECT_BASIC_SET_TEST(obj, std::string);
+	OBJECT_BASIC_SET_TEST(obj, std::u8string);
 	OBJECT_BASIC_SET_TEST(obj, object::array_type);
 
 	// const char*
-	obj.set("");
-	EXPECT_TRUE(obj.has<std::string>());
-	EXPECT_EQ(obj.get<std::string>(), std::string{});
+	obj.set(u8"");
+	EXPECT_TRUE(obj.has<std::u8string>());
+	EXPECT_EQ(obj.get<std::u8string>(), std::u8string{});
 
-	// std::string_view
-	obj.set(""sv);
-	EXPECT_TRUE(obj.has<std::string>());
-	EXPECT_EQ(obj.get<std::string>(), std::string{});
+	// std::u8string_view
+	obj.set(u8""sv);
+	EXPECT_TRUE(obj.has<std::u8string>());
+	EXPECT_EQ(obj.get<std::u8string>(), std::u8string{});
 }
 
 TEST(ObjectTest, basic_set_vector) {
@@ -530,7 +530,7 @@ TEST(ObjectTest, basic_set_vector) {
 	OBJECT_BASIC_SET_TEST(obj, std::vector<float>);
 	OBJECT_BASIC_SET_TEST(obj, std::vector<double>);
 	OBJECT_BASIC_SET_TEST(obj, std::vector<long double>);
-	OBJECT_BASIC_SET_TEST(obj, std::vector<std::string>);
+	OBJECT_BASIC_SET_TEST(obj, std::vector<std::u8string>);
 	OBJECT_BASIC_SET_TEST(obj, std::vector<object>);
 }
 
@@ -548,7 +548,7 @@ TEST(ObjectTest, basic_set_list) {
 	OBJECT_BASIC_SET_TEST(obj, std::list<float>);
 	OBJECT_BASIC_SET_TEST(obj, std::list<double>);
 	OBJECT_BASIC_SET_TEST(obj, std::list<long double>);
-	OBJECT_BASIC_SET_TEST(obj, std::list<std::string>);
+	OBJECT_BASIC_SET_TEST(obj, std::list<std::u8string>);
 	OBJECT_BASIC_SET_TEST(obj, std::list<object>);
 }
 
@@ -566,7 +566,7 @@ TEST(ObjectTest, basic_set_forward_list) {
 	OBJECT_BASIC_SET_TEST(obj, std::forward_list<float>);
 	OBJECT_BASIC_SET_TEST(obj, std::forward_list<double>);
 	OBJECT_BASIC_SET_TEST(obj, std::forward_list<long double>);
-	OBJECT_BASIC_SET_TEST(obj, std::forward_list<std::string>);
+	OBJECT_BASIC_SET_TEST(obj, std::forward_list<std::u8string>);
 	OBJECT_BASIC_SET_TEST(obj, std::forward_list<object>);
 }
 
@@ -584,7 +584,7 @@ TEST(ObjectTest, basic_set_set) {
 	OBJECT_BASIC_SET_TEST(obj, std::set<float>);
 	OBJECT_BASIC_SET_TEST(obj, std::set<double>);
 	OBJECT_BASIC_SET_TEST(obj, std::set<long double>);
-	OBJECT_BASIC_SET_TEST(obj, std::set<std::string>);
+	OBJECT_BASIC_SET_TEST(obj, std::set<std::u8string>);
 	OBJECT_BASIC_SET_TEST(obj, std::set<object>);
 }
 
@@ -602,7 +602,7 @@ TEST(ObjectTest, basic_set_multiset) {
 	OBJECT_BASIC_SET_TEST(obj, std::multiset<float>);
 	OBJECT_BASIC_SET_TEST(obj, std::multiset<double>);
 	OBJECT_BASIC_SET_TEST(obj, std::multiset<long double>);
-	OBJECT_BASIC_SET_TEST(obj, std::multiset<std::string>);
+	OBJECT_BASIC_SET_TEST(obj, std::multiset<std::u8string>);
 	OBJECT_BASIC_SET_TEST(obj, std::multiset<object>);
 }
 
@@ -620,7 +620,7 @@ TEST(ObjectTest, basic_set_unordered_set) {
 	OBJECT_BASIC_SET_TEST(obj, std::unordered_set<float>);
 	OBJECT_BASIC_SET_TEST(obj, std::unordered_set<double>);
 	OBJECT_BASIC_SET_TEST(obj, std::unordered_set<long double>);
-	OBJECT_BASIC_SET_TEST(obj, std::unordered_set<std::string>);
+	OBJECT_BASIC_SET_TEST(obj, std::unordered_set<std::u8string>);
 	OBJECT_BASIC_SET_TEST(obj, std::unordered_set<object>);
 }
 
@@ -638,7 +638,7 @@ TEST(ObjectTest, basic_set_unordered_multiset) {
 	OBJECT_BASIC_SET_TEST(obj, std::unordered_multiset<float>);
 	OBJECT_BASIC_SET_TEST(obj, std::unordered_multiset<double>);
 	OBJECT_BASIC_SET_TEST(obj, std::unordered_multiset<long double>);
-	OBJECT_BASIC_SET_TEST(obj, std::unordered_multiset<std::string>);
+	OBJECT_BASIC_SET_TEST(obj, std::unordered_multiset<std::u8string>);
 	OBJECT_BASIC_SET_TEST(obj, std::unordered_set<object>);
 }
 
@@ -663,18 +663,18 @@ TEST(ObjectTest, basic_assignment_operator) {
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, float);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, double);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, long_double_t);
-	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::string);
+	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::u8string);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, object::array_type);
 
 	// const char*
-	obj = "";
-	EXPECT_TRUE(obj.has<std::string>());
-	EXPECT_EQ(obj.get<std::string>(), std::string{});
+	obj = u8"";
+	EXPECT_TRUE(obj.has<std::u8string>());
+	EXPECT_EQ(obj.get<std::u8string>(), std::u8string{});
 
-	// std::string_view
-	obj = ""sv;
-	EXPECT_TRUE(obj.has<std::string>());
-	EXPECT_EQ(obj.get<std::string>(), std::string{});
+	// std::u8string_view
+	obj = u8""sv;
+	EXPECT_TRUE(obj.has<std::u8string>());
+	EXPECT_EQ(obj.get<std::u8string>(), std::u8string{});
 }
 
 TEST(ObjectTest, basic_assignment_operator_vector) {
@@ -691,7 +691,7 @@ TEST(ObjectTest, basic_assignment_operator_vector) {
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::vector<float>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::vector<double>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::vector<long double>);
-	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::vector<std::string>);
+	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::vector<std::u8string>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::vector<object>);
 }
 
@@ -709,7 +709,7 @@ TEST(ObjectTest, basic_assignment_operator_list) {
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::list<float>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::list<double>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::list<long double>);
-	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::list<std::string>);
+	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::list<std::u8string>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::list<object>);
 }
 
@@ -727,7 +727,7 @@ TEST(ObjectTest, basic_assignment_operator_forward_list) {
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::forward_list<float>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::forward_list<double>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::forward_list<long double>);
-	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::forward_list<std::string>);
+	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::forward_list<std::u8string>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::forward_list<object>);
 }
 
@@ -745,7 +745,7 @@ TEST(ObjectTest, basic_assignment_operator_set) {
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::set<float>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::set<double>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::set<long double>);
-	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::set<std::string>);
+	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::set<std::u8string>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::set<object>);
 }
 
@@ -763,7 +763,7 @@ TEST(ObjectTest, basic_assignment_operator_multiset) {
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::multiset<float>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::multiset<double>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::multiset<long double>);
-	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::multiset<std::string>);
+	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::multiset<std::u8string>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::multiset<object>);
 }
 
@@ -781,7 +781,7 @@ TEST(ObjectTest, basic_assignment_operator_unordered_set) {
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_set<float>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_set<double>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_set<long double>);
-	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_set<std::string>);
+	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_set<std::u8string>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_set<object>);
 }
 
@@ -799,7 +799,7 @@ TEST(ObjectTest, basic_assignment_operator_unordered_multiset) {
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_multiset<float>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_multiset<double>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_multiset<long double>);
-	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_multiset<std::string>);
+	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_multiset<std::u8string>);
 	OBJECT_BASIC_ASSIGNMENT_OPERATOR_TEST(obj, std::unordered_set<object>);
 }
 
@@ -808,17 +808,17 @@ TEST(ObjectTest, basic_assignment_operator_unordered_multiset) {
 TEST(ObjectTest, basic_map_access_operator) {
 	object obj;
 
-	obj["test"] = 1234;
-	EXPECT_EQ(obj["test"].get<int>(), 1234);
-	EXPECT_EQ(obj["test2"].get<int>(), 0);
+	obj[u8"test"] = 1234;
+	EXPECT_EQ(obj[u8"test"].get<int>(), 1234);
+	EXPECT_EQ(obj[u8"test2"].get<int>(), 0);
 
-	obj["test"] = 4567;
-	EXPECT_EQ(obj["test"].get<int>(), 4567);
-	EXPECT_EQ(obj["test2"].get<int>(), 0);
+	obj[u8"test"] = 4567;
+	EXPECT_EQ(obj[u8"test"].get<int>(), 4567);
+	EXPECT_EQ(obj[u8"test2"].get<int>(), 0);
 
-	obj["test2"] = 1234;
-	EXPECT_EQ(obj["test"].get<int>(), 4567);
-	EXPECT_EQ(obj["test2"].get<int>(), 1234);
+	obj[u8"test2"] = 1234;
+	EXPECT_EQ(obj[u8"test"].get<int>(), 4567);
+	EXPECT_EQ(obj[u8"test2"].get<int>(), 1234);
 }
 
 TEST(ObjectTest, basic_array_access_operator) {
@@ -914,31 +914,31 @@ TEST(ObjectTest, set_float) {
 TEST(ObjectTest, set_string) {
 	object obj;
 
-	obj.set("Jessica");
+	obj.set(u8"Jessica");
 
-	EXPECT_TRUE(obj.has<std::string>());
-	EXPECT_EQ(obj.get<std::string>(), "Jessica");
+	EXPECT_TRUE(obj.has<std::u8string>());
+	EXPECT_EQ(obj.get<std::u8string>(), u8"Jessica");
 	EXPECT_FALSE(obj.has<bool>());
 	EXPECT_FALSE(obj.get<bool>());
 
-	obj.set("was"s);
+	obj.set(u8"was"s);
 
-	EXPECT_TRUE(obj.has<std::string>());
-	EXPECT_EQ(obj.get<std::string>(), "was");
+	EXPECT_TRUE(obj.has<std::u8string>());
+	EXPECT_EQ(obj.get<std::u8string>(), u8"was");
 	EXPECT_FALSE(obj.has<bool>());
 	EXPECT_FALSE(obj.get<bool>());
 
-	obj.set("here"sv);
+	obj.set(u8"here"sv);
 
-	EXPECT_TRUE(obj.has<std::string>());
-	EXPECT_EQ(obj.get<std::string>(), "here");
+	EXPECT_TRUE(obj.has<std::u8string>());
+	EXPECT_EQ(obj.get<std::u8string>(), u8"here");
 	EXPECT_FALSE(obj.has<bool>());
 	EXPECT_FALSE(obj.get<bool>());
 
-	obj.set("");
+	obj.set(u8"");
 
-	EXPECT_TRUE(obj.has<std::string>());
-	EXPECT_EQ(obj.get<std::string>(), "");
+	EXPECT_TRUE(obj.has<std::u8string>());
+	EXPECT_EQ(obj.get<std::u8string>(), u8"");
 	EXPECT_FALSE(obj.has<bool>());
 	EXPECT_FALSE(obj.get<bool>());
 }

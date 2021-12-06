@@ -31,8 +31,12 @@ namespace jessilib {
 class object {
 public:
 	using array_type = std::vector<object>;
-	using string_type = std::string;
-	using string_view_type = std::string_view;
+	using text_char_type = char8_t;
+	using text_type = std::basic_string<text_char_type>;
+	using text_view_type = std::basic_string_view<text_char_type>;
+	using data_type = std::vector<unsigned char>;
+	using string_type = text_type;
+	using string_view_type = text_view_type;
 	using map_type = std::map<string_type, object>;
 	using index_type = std::size_t;
 
@@ -86,7 +90,8 @@ public:
 		boolean,
 		integer,
 		decimal,
-		string, // TODO: consider separating into 'binary' (std::vector<std::byte>) and 'text' (string_type) types
+		text,
+		data,
 		array,
 		map
 	};
@@ -152,7 +157,7 @@ public:
 		}
 	}
 
-	object(const char* in_str);
+	object(const text_char_type* in_str);
 	object(const string_view_type& in_str);
 
 	// Comparison operators
@@ -454,6 +459,17 @@ public:
 
 				return result;
 			}
+			else if constexpr (std::is_same<T, data_type>::value) {
+				// TODO: pull this into a separate method
+				uint64_t hash = 14695981039346656037ULL;
+
+				for (auto byte : value) {
+					hash = hash ^ byte;
+					hash = hash * 1099511628211ULL;
+				}
+
+				return hash;
+			}
 			else {
 				return std::hash<T>{}(std::forward<decltype(value)>(value));
 			}
@@ -464,7 +480,7 @@ private:
 	using null_variant_t = void*;
 	// TODO: consider replacing std::string with std::u8string (for strings) & std::vector<unsigned char> (for data)
 	// TODO: consider some more generic mechanism for underlying string type, to support utf-16 & utf-32 strings
-	std::variant<null_variant_t, bool, intmax_t, long double, string_type, array_type, map_type> m_value;
+	std::variant<null_variant_t, bool, intmax_t, long double, text_type, data_type, array_type, map_type> m_value;
 
 	// TODO: note for future self, just use either first or last element in array_type to hold XML attributes
 	// OR, have every XML tag objects be a map, with all subobjects being in a "__values" array subobject or such

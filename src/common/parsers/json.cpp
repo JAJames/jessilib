@@ -25,7 +25,7 @@ using namespace std::literals;
 
 namespace jessilib {
 
-std::string make_json_string(std::string_view in_string) {
+std::string make_json_string(std::u8string_view in_string) {
 	std::string result;
 	result.reserve(in_string.size() + 2);
 	result = '\"';
@@ -44,8 +44,8 @@ std::string make_json_string(std::string_view in_string) {
 
 			// overwrite last 2 zeroes with correct hexadecimal sequence
 			char* data_end = result.data() + result.size();
-			char* data = data_end - 2;
-			std::to_chars(data, data_end, in_string.front(), 16);
+			char* data = data_end - 2; // TODO: this isn't correct, is it? to_chars may only write 1 char in many cases
+			std::to_chars(data, data_end, static_cast<char>(in_string.front()), 16); // TODO: use decode_codepoint
 		}
 		else if ((in_string.front() & 0x80) != 0) { // UTF-8 sequence; copy to bypass above processing
 			if ((in_string.front() & 0x40) != 0) {
@@ -62,7 +62,7 @@ std::string make_json_string(std::string_view in_string) {
 						}
 
 						// This is a 4-byte sequence
-						result += in_string.substr(0, 4);
+						result.append(reinterpret_cast<const char*>(in_string.data()), 4);
 						in_string.remove_prefix(4);
 						continue;
 					}
@@ -73,7 +73,7 @@ std::string make_json_string(std::string_view in_string) {
 					}
 
 					// This is a 3-byte sequence
-					result += in_string.substr(0, 3);
+					result.append(reinterpret_cast<const char*>(in_string.data()), 3);
 					in_string.remove_prefix(3);
 					continue;
 				}
@@ -84,7 +84,7 @@ std::string make_json_string(std::string_view in_string) {
 				}
 
 				// This is a 2-byte sequence
-				result += in_string.substr(0, 2);
+				result.append(reinterpret_cast<const char*>(in_string.data()), 2);
 				in_string.remove_prefix(2);
 				continue;
 			}
@@ -94,7 +94,7 @@ std::string make_json_string(std::string_view in_string) {
 		}
 		else {
 			// Character in standard ASCII table
-			result += in_string.front();
+			result += static_cast<char>(in_string.front());
 		}
 
 		in_string.remove_prefix(1);
@@ -132,8 +132,8 @@ uint16_t get_codepoint_from_hex(const std::string_view& in_data) {
 	return value;
 }
 
-std::string read_json_string(std::string_view& in_data) {
-	std::string result;
+std::u8string read_json_string(std::string_view& in_data) {
+	std::u8string result;
 
 	// Remove leading quotation
 	in_data.remove_prefix(1);
@@ -154,49 +154,49 @@ std::string read_json_string(std::string_view& in_data) {
 					// Quote
 					case '\"':
 						in_data.remove_prefix(1);
-						result += '\"';
+						result += u8'\"';
 						break;
 
 					// Backslash
 					case '\\':
 						in_data.remove_prefix(1);
-						result += '\\';
+						result += u8'\\';
 						break;
 
 					// Forward slash
 					case '/':
 						in_data.remove_prefix(1);
-						result += '/';
+						result += u8'/';
 						break;
 
 					// Backspace
 					case 'b':
 						in_data.remove_prefix(1);
-						result += '\b';
+						result += u8'\b';
 						break;
 
 					// Formfeed
 					case 'f':
 						in_data.remove_prefix(1);
-						result += '\f';
+						result += u8'\f';
 						break;
 
 					// Newline
 					case 'n':
 						in_data.remove_prefix(1);
-						result += '\n';
+						result += u8'\n';
 						break;
 
 					// Carriage return
 					case 'r':
 						in_data.remove_prefix(1);
-						result += '\r';
+						result += u8'\r';
 						break;
 
 					// Horizontal tab
 					case 't':
 						in_data.remove_prefix(1);
-						result += '\t';
+						result += u8'\t';
 						break;
 
 					// Unicode codepoint
@@ -258,8 +258,7 @@ std::string read_json_string(std::string_view& in_data) {
 				}
 
 				// Valid unicode sequence
-				result += in_data.substr(0, codepoint.units);
-				//result.append(reinterpret_cast<const char8_t*>(in_data.data()), codepoint.units);
+				result.append(reinterpret_cast<const char8_t*>(in_data.data()), codepoint.units);
 				in_data.remove_prefix(codepoint.units);
 				break;
 			}
@@ -492,8 +491,8 @@ std::string json_parser::serialize(const object& in_object) {
 		case object::type::decimal:
 			return std::to_string(in_object.get<long double>());
 
-		case object::type::string:
-			return make_json_string(in_object.get<std::string>());
+		case object::type::text:
+			return make_json_string(in_object.get<std::u8string>());
 
 		case object::type::array: {
 			if (in_object.size() == 0) {

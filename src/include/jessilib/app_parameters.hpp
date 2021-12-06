@@ -25,24 +25,24 @@ public:
 	app_parameters(int in_argc, char** in_argv);
 	app_parameters(int in_argc, const char** in_argv);
 
-	std::string_view path() const;
-	const std::vector<std::string_view>& arguments() const;
-	const std::vector<std::string_view>& switches() const;
-	const std::unordered_set<std::string_view>& switches_set() const;
-	const std::unordered_map<std::string_view, std::string>& values() const;
+	std::u8string_view path() const;
+	const std::vector<std::u8string_view>& arguments() const;
+	const std::vector<std::u8string_view>& switches() const;
+	const std::unordered_set<std::u8string_view>& switches_set() const;
+	const std::unordered_map<std::u8string_view, std::u8string>& values() const;
 	jessilib::object as_object() const;
 
-	bool has_switch(std::string_view in_switch) const;
-	std::string_view get_value(std::string_view in_key, std::string_view in_default = {}) const;
+	bool has_switch(std::u8string_view in_switch) const;
+	std::u8string_view get_value(std::u8string_view in_key, std::u8string_view in_default = {}) const;
 
 	operator jessilib::object() const { return as_object(); }
 
 private:
-	std::string_view m_path;
-	std::vector<std::string_view> m_args;
-	std::vector<std::string_view> m_switches;
-	std::unordered_set<std::string_view> m_switches_set;
-	std::unordered_map<std::string_view, std::string> m_values;
+	std::u8string_view m_path;
+	std::vector<std::u8string_view> m_args;
+	std::vector<std::u8string_view> m_switches;
+	std::unordered_set<std::u8string_view> m_switches_set;
+	std::unordered_map<std::u8string_view, std::u8string> m_values;
 };
 
 } // namespace jessilib

@@ -20,6 +20,7 @@
 #include "test.hpp"
 #include "jessilib/parser.hpp"
 #include "jessilib/serialize.hpp"
+#include "jessilib/unicode.hpp"
 
 using namespace jessilib;
 using namespace std::literals;
@@ -45,15 +46,15 @@ public:
 
 	/** default serialize/deserialize implementations */
 	static std::string serialize_default(const object& in_object) {
-		if (in_object.has<std::string>()) {
-			return in_object.get<std::string>();
+		if (in_object.has<std::u8string>()) {
+			return string_cast<char>(in_object.get<std::u8string>());
 		}
 
 		return static_cast<std::string>(DEFAULT_SERIALIZE_RESULT);
 	}
 
 	static object deserialize_default(std::string_view in_data) {
-		return object{ in_data };
+		return object{ string_view_cast<char8_t>(in_data) };
 	}
 
 	/** static members */
@@ -82,31 +83,31 @@ class ParserTest : public base_test {
 /** Parser tests */
 
 TEST_F(ParserTest, find_parser) {
-	EXPECT_NO_THROW(serialize_object("test_data", "test"));
+	EXPECT_NO_THROW(serialize_object(u8"test_data", "test"));
 	EXPECT_NO_THROW(deserialize_object("test_data"sv, "test"));
 
-	EXPECT_THROW(serialize_object("test_data", "invalid_format_test"), format_not_available);
+	EXPECT_THROW(serialize_object(u8"test_data", "invalid_format_test"), format_not_available);
 	EXPECT_THROW(deserialize_object("test_data"sv, "invalid_format_test"), format_not_available);
 }
 
 TEST_F(ParserTest, temp_parser) {
-	EXPECT_THROW(serialize_object("test_data", "test_tmp"), format_not_available);
+	EXPECT_THROW(serialize_object(u8"test_data", "test_tmp"), format_not_available);
 	EXPECT_THROW(deserialize_object("test_data"sv, "test_tmp"), format_not_available);
 
 	{
 		parser_registration<test_parser> test_tmp_registration{ "test_tmp" };
-		EXPECT_NO_THROW(serialize_object("test_data", "test_tmp"));
+		EXPECT_NO_THROW(serialize_object(u8"test_data", "test_tmp"));
 		EXPECT_NO_THROW(deserialize_object("test_data"sv, "test_tmp"));
 	}
 
-	EXPECT_THROW(serialize_object("test_data", "test_tmp"), format_not_available);
+	EXPECT_THROW(serialize_object(u8"test_data", "test_tmp"), format_not_available);
 	EXPECT_THROW(deserialize_object("test_data"sv, "test_tmp"), format_not_available);
 }
 
 TEST_F(ParserTest, serialize) {
-	EXPECT_EQ(serialize_object("test_data", "test"), "test_data");
+	EXPECT_EQ(serialize_object(u8"test_data", "test"), "test_data");
 }
 
 TEST_F(ParserTest, deserialize) {
-	EXPECT_EQ(deserialize_object("test_data"sv, "test").get<std::string>(), "test_data");
+	EXPECT_EQ(deserialize_object("test_data"sv, "test").get<std::u8string>(), u8"test_data");
 }

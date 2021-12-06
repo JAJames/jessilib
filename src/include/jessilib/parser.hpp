@@ -38,9 +38,9 @@ public:
 	 * @return A valid (possibly null) object
 	 */
 	virtual object deserialize(std::istream& in_stream);
-	virtual object deserialize(std::string_view in_data) = 0;
+	virtual object deserialize(std::string_view in_data) = 0; // TODO: serialize from arbitrary unicode strings
 	virtual void serialize(std::ostream& in_stream, const object& in_object);
-	virtual std::string serialize(const object& in_object) = 0;
+	virtual std::string serialize(const object& in_object) = 0; // TODO: serialize to arbitrary unicode strings
 }; // parser
 
 template<typename T>
