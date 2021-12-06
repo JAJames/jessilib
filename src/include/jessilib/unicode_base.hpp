@@ -74,7 +74,7 @@ std::wstring encode_codepoint_w(char32_t in_codepoint); // ASSUMES UTF-16 OR UTF
 
 /** decode_codepoint */
 
-struct get_endpoint_result {
+struct decode_result {
 	char32_t codepoint{}; // Codepoint
 	size_t units{}; // Number of data units codepoint was represented by, or 0
 };
@@ -86,17 +86,17 @@ struct get_endpoint_result {
  * @return A struct containing a valid codepoint and the number of representative data units on success, zero otherwise.
  */
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint_utf8(std::basic_string_view<CharT> in_string); // UTF-8
+constexpr decode_result decode_codepoint_utf8(std::basic_string_view<CharT> in_string); // UTF-8
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint_utf16(std::basic_string_view<CharT> in_string); // UTF-16
+constexpr decode_result decode_codepoint_utf16(std::basic_string_view<CharT> in_string); // UTF-16
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint_utf32(std::basic_string_view<CharT> in_string); // UTF-32
+constexpr decode_result decode_codepoint_utf32(std::basic_string_view<CharT> in_string); // UTF-32
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint(std::basic_string_view<CharT> in_string); // ASSUMES UTF-16 OR UTF-32
+constexpr decode_result decode_codepoint(std::basic_string_view<CharT> in_string); // ASSUMES UTF-16 OR UTF-32
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint(const CharT* in_begin, size_t in_length);
+constexpr decode_result decode_codepoint(const CharT* in_begin, size_t in_length);
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint(const CharT* in_begin, const CharT* in_end);
+constexpr decode_result decode_codepoint(const CharT* in_begin, const CharT* in_end);
 
 /** advance_codepoint */
 
@@ -125,7 +125,7 @@ bool is_valid_codepoint(const std::basic_string_view<T>& in_string) {
 
 constexpr bool is_high_surrogate(char32_t in_codepoint);
 constexpr bool is_low_surrogate(char32_t in_codepoint);
-constexpr get_endpoint_result decode_surrogate_pair(char16_t in_high_surrogate, char16_t in_low_surrogate);
+constexpr decode_result decode_surrogate_pair(char16_t in_high_surrogate, char16_t in_low_surrogate);
 
 template<typename CharT>
 struct unicode_traits : std::false_type {};
@@ -365,8 +365,8 @@ constexpr size_t encode_codepoint(CharT* out_buffer, char32_t in_codepoint) {
 /** decode_codepoint */
 
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint_utf8(std::basic_string_view<CharT> in_string) {
-	get_endpoint_result result{ 0, 0 };
+constexpr decode_result decode_codepoint_utf8(std::basic_string_view<CharT> in_string) {
+	decode_result result{ 0, 0 };
 
 	if (in_string.empty()) {
 		return result;
@@ -426,7 +426,7 @@ constexpr get_endpoint_result decode_codepoint_utf8(std::basic_string_view<CharT
 }
 
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint_utf16(std::basic_string_view<CharT> in_string) {
+constexpr decode_result decode_codepoint_utf16(std::basic_string_view<CharT> in_string) {
 	if (in_string.empty()) {
 		return { 0, 0 };
 	}
@@ -449,7 +449,7 @@ constexpr get_endpoint_result decode_codepoint_utf16(std::basic_string_view<Char
 }
 
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint_utf32(std::basic_string_view<CharT> in_string) {
+constexpr decode_result decode_codepoint_utf32(std::basic_string_view<CharT> in_string) {
 	if (in_string.empty()) {
 		return { 0, 0 };
 	}
@@ -458,7 +458,7 @@ constexpr get_endpoint_result decode_codepoint_utf32(std::basic_string_view<Char
 }
 
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint(std::basic_string_view<CharT> in_string) {
+constexpr decode_result decode_codepoint(std::basic_string_view<CharT> in_string) {
 	if constexpr (std::is_same_v<CharT, char8_t>) {
 		return decode_codepoint_utf8(in_string);
 	}
@@ -482,12 +482,12 @@ constexpr get_endpoint_result decode_codepoint(std::basic_string_view<CharT> in_
 }
 
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint(const CharT* in_begin, size_t in_length) {
+constexpr decode_result decode_codepoint(const CharT* in_begin, size_t in_length) {
 	return decode_codepoint<CharT>(std::basic_string_view<CharT>{in_begin, in_length});
 }
 
 template<typename CharT>
-constexpr get_endpoint_result decode_codepoint(const CharT* in_begin, const CharT* in_end) {
+constexpr decode_result decode_codepoint(const CharT* in_begin, const CharT* in_end) {
 	return decode_codepoint<CharT>(std::basic_string_view<CharT>{in_begin, static_cast<size_t>(in_end - in_begin)});
 }
 
@@ -499,7 +499,7 @@ constexpr bool is_low_surrogate(char32_t in_codepoint) {
 	return in_codepoint >= 0xDC00 && in_codepoint <= 0xDFFF;
 }
 
-constexpr get_endpoint_result decode_surrogate_pair(char16_t in_high_surrogate, char16_t in_low_surrogate) {
+constexpr decode_result decode_surrogate_pair(char16_t in_high_surrogate, char16_t in_low_surrogate) {
 	if (is_high_surrogate(in_high_surrogate)
 		&& is_low_surrogate((in_low_surrogate))) {
 		// We have a valid surrogate pair; decode it into a codepoint and return

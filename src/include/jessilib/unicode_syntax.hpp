@@ -37,7 +37,7 @@ template<typename CharT, typename ContextT>
 using syntax_tree_action = bool(*)(ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view);
 
 template<typename CharT, typename ContextT>
-using default_syntax_tree_action = bool(*)(get_endpoint_result in_codepoint, ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view);
+using default_syntax_tree_action = bool(*)(decode_result in_codepoint, ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view);
 
 template<typename CharT, typename ContextT>
 using syntax_tree = const std::pair<char32_t, syntax_tree_action<CharT, ContextT>>[];
@@ -73,12 +73,12 @@ constexpr bool is_sorted() {
 }
 
 template<typename CharT, typename ContextT>
-bool fail_action(get_endpoint_result, ContextT&, std::basic_string_view<CharT>&) {
+bool fail_action(decode_result, ContextT&, std::basic_string_view<CharT>&) {
 	return false;
 }
 
 template<typename CharT, typename ContextT>
-bool noop_action(get_endpoint_result decode, ContextT&, std::basic_string_view<CharT>& inout_read_view) {
+bool noop_action(decode_result decode, ContextT&, std::basic_string_view<CharT>& inout_read_view) {
 	inout_read_view.remove_prefix(decode.units);
 	return true;
 }
@@ -111,7 +111,7 @@ constexpr bool apply_syntax_tree(ContextT& inout_context, std::basic_string_view
 		return true;
 	}
 
-	get_endpoint_result decode;
+	decode_result decode;
 	constexpr auto SubTreeEnd = SequenceTreeBegin + SequenceTreeSize;
 	while ((decode = decode_codepoint(inout_read_view)).units != 0) {
 		auto parser = std::lower_bound(SequenceTreeBegin, SubTreeEnd, decode.codepoint, &syntax_tree_member_compare<CharT, ContextT>);

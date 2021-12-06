@@ -144,7 +144,7 @@ constexpr syntax_tree_member<CharT, ContextT> make_simple_shrink_pair() {
 }
 
 template<typename CharT, typename ContextT>
-bool html_form_default_action(get_endpoint_result decode, ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view) {
+bool html_form_default_action(decode_result decode, ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view) {
 	// A regular character; copy it and advance the read/write heads
 	CharT*& write_head = inout_context.write_head;
 	CharT* write_end = write_head + decode.units;

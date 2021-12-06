@@ -89,7 +89,7 @@ constexpr bool apply_shrink_sequence_tree(std::basic_string<CharT>& inout_string
 
 	std::basic_string_view<CharT> read_view = inout_string;
 	CharT* write_head = inout_string.data();
-	get_endpoint_result decode;
+	decode_result decode;
 
 	constexpr auto SubTreeEnd = SequenceTreeBegin + SequenceTreeSize;
 	while ((decode = decode_codepoint(read_view)).units != 0) {

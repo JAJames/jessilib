@@ -89,7 +89,7 @@ bool is_valid(const InT& in_string) {
 
 	InViewT in_string_view = static_cast<InViewT>(in_string);
 	while (!in_string_view.empty()) {
-		get_endpoint_result string_front = decode_codepoint(in_string_view);
+		decode_result string_front = decode_codepoint(in_string_view);
 		if (string_front.units == 0) {
 			return false;
 		}
@@ -163,7 +163,7 @@ std::basic_string<OutCharT> string_cast(const InT& in_string) {
 		}
 
 		while (!in_string_view.empty()) {
-			get_endpoint_result string_front = decode_codepoint(in_string_view);
+			decode_result string_front = decode_codepoint(in_string_view);
 			if (string_front.units == 0) {
 				return {};
 			}
@@ -199,7 +199,7 @@ size_t find(std::basic_string_view<LhsCharT> in_string, char32_t in_codepoint) {
 	size_t codepoints_removed{};
 	while (!in_string.empty()) {
 		std::basic_string_view<LhsCharT> string = in_string;
-		get_endpoint_result string_front = decode_codepoint(string);
+		decode_result string_front = decode_codepoint(string);
 
 		if (string_front.units == 0) {
 			// Failed to decode front codepoint; bad unicode sequence
@@ -267,12 +267,12 @@ size_t find(std::basic_string_view<LhsCharT> in_string, std::basic_string_view<R
 
 		std::basic_string_view<LhsCharT> string = in_string;
 		std::basic_string_view<RhsCharT> substring = in_substring;
-		get_endpoint_result string_front;
+		decode_result string_front;
 		do {
 			// TODO: optimize this for when in_string and in_substring are same type, by only decoding in_string, solely
 			// to determine number of data units to compare
 			string_front = decode_codepoint(string);
-			get_endpoint_result prefix_front = decode_codepoint(substring);
+			decode_result prefix_front = decode_codepoint(substring);
 
 			if (string_front.units == 0
 				|| prefix_front.units == 0) {
@@ -386,7 +386,7 @@ constexpr void join_append(OutT& out_string, InT&& in_string, ArgsT&&... in_args
 	}
 	else {
 		// Append over all the codepoints
-		get_endpoint_result decode;
+		decode_result decode;
 		std::basic_string_view<InCharT> in_view = in_string;
 		while ((decode = decode_codepoint(in_view)).units != 0) {
 			encode_codepoint(out_string, decode.codepoint);

@@ -145,8 +145,8 @@ size_t starts_with_length(std::basic_string_view<LhsCharT> in_string, std::basic
 
 	size_t codepoints_removed{};
 	while (!in_string.empty() && !in_prefix.empty()) {
-		get_endpoint_result string_front = decode_codepoint(in_string);
-		get_endpoint_result prefix_front = decode_codepoint(in_prefix);
+		decode_result string_front = decode_codepoint(in_string);
+		decode_result prefix_front = decode_codepoint(in_prefix);
 
 		if (string_front.units == 0
 			|| prefix_front.units == 0) {
@@ -195,8 +195,8 @@ size_t starts_with_lengthi(std::basic_string_view<LhsCharT> in_string, std::basi
 
 	size_t codepoints_removed{};
 	while (!in_string.empty() && !in_prefix.empty()) {
-		get_endpoint_result string_front = decode_codepoint(in_string);
-		get_endpoint_result prefix_front = decode_codepoint(in_prefix);
+		decode_result string_front = decode_codepoint(in_string);
+		decode_result prefix_front = decode_codepoint(in_prefix);
 
 		if (string_front.units == 0
 			|| prefix_front.units == 0) {
@@ -270,7 +270,7 @@ struct text_hash {
 	static uint64_t hash(const CharT* data, const CharT* end) {
 		uint64_t hash = 14695981039346656037ULL;
 
-		get_endpoint_result decode;
+		decode_result decode;
 		while (data != end) {
 			decode = decode_codepoint(data, end);
 			if (decode.units == 0) {
@@ -355,7 +355,7 @@ struct text_hashi {
 	static uint64_t hash(const CharT* data, const CharT* end) {
 		uint64_t hash = 14695981039346656037ULL;
 
-		get_endpoint_result decode;
+		decode_result decode;
 		while (data != end) {
 			decode = decode_codepoint(data, end - data);
 			if (decode.units == 0) {
