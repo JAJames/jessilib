@@ -22,24 +22,26 @@
 using namespace jessilib;
 using namespace std::literals;
 
+template<typename CharT = char>
 class ArgWrapper {
 public:
 	template<typename... Args>
 	ArgWrapper(Args... in_args)
-		: ArgWrapper{ std::vector<std::string>{ in_args... } } {
+		: ArgWrapper{ std::vector<std::basic_string<CharT>>{ in_args... } } {
 		// Empty ctor body
 	}
 
-	ArgWrapper(std::vector<std::string> in_args)
+	ArgWrapper(std::vector<std::basic_string<CharT>> in_args)
 		: m_args{ in_args },
-		m_argv{ new const char*[in_args.size()] } {
+		m_argv{ new const CharT*[in_args.size() + 1] } {
 		// Populate m_argv
 		for (size_t index = 0; index != m_args.size(); ++index) {
 			m_argv[index] = m_args[index].c_str();
 		}
+		m_argv[in_args.size()] = nullptr; // last arg is always nullptr
 	}
 
-	const char** argv() const {
+	const CharT** argv() const {
 		return m_argv.get();
 	}
 
@@ -48,8 +50,8 @@ public:
 	}
 
 private:
-	std::vector<std::string> m_args;
-	std::unique_ptr<const char*[]> m_argv;
+	std::vector<std::basic_string<CharT>> m_args;
+	std::unique_ptr<const CharT*[]> m_argv;
 };
 
 TEST(AppParametersTest, null) {
@@ -73,6 +75,21 @@ TEST(AppParametersTest, null) {
 
 TEST(AppParametersTest, path_only) {
 	ArgWrapper args{ "/path/to/exe" };
+	app_parameters parameters{ args.argc(), args.argv() };
+
+	EXPECT_EQ(parameters.path(), u8"/path/to/exe");
+	EXPECT_TRUE(parameters.arguments().empty());
+	EXPECT_TRUE(parameters.switches().empty());
+	EXPECT_TRUE(parameters.switches_set().empty());
+	EXPECT_TRUE(parameters.values().empty());
+
+	auto obj = parameters.as_object();
+	EXPECT_FALSE(obj.null());
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+}
+
+TEST(AppParametersTest, path_only_w) {
+	ArgWrapper<wchar_t> args{ L"/path/to/exe" };
 	app_parameters parameters{ args.argc(), args.argv() };
 
 	EXPECT_EQ(parameters.path(), u8"/path/to/exe");
@@ -257,6 +274,31 @@ TEST(AppParametersTest, double_value_eq) {
 
 TEST(AppParametersTest, switch_and_value) {
 	ArgWrapper args{ "/path/to/exe", "--switch", "-key", "value" };
+	app_parameters parameters{ args.argc(), args.argv() };
+
+	EXPECT_FALSE(parameters.path().empty());
+	EXPECT_EQ(parameters.arguments().size(), 3U);
+	EXPECT_EQ(parameters.switches().size(), 1U);
+	EXPECT_EQ(parameters.switches_set().size(), 1U);
+	EXPECT_EQ(parameters.values().size(), 1U);
+
+	auto obj = parameters.as_object();
+	std::vector<std::u8string> expected_args{ u8"--switch", u8"-key", u8"value" };
+	std::vector<std::u8string> expected_switches{ u8"switch" };
+	std::map<std::u8string, object> expected_values{ { u8"key", u8"value" } };
+	EXPECT_FALSE(obj.null());
+	EXPECT_EQ(obj[u8"Path"], u8"/path/to/exe");
+	EXPECT_EQ(obj[u8"Args"], expected_args);
+	EXPECT_EQ(obj[u8"Switches"], expected_switches);
+	EXPECT_EQ(obj[u8"Values"], expected_values);
+
+	EXPECT_TRUE(parameters.has_switch(u8"switch"));
+	EXPECT_FALSE(parameters.has_switch(u8"switch2"));
+	EXPECT_EQ(parameters.get_value(u8"key"), u8"value");
+}
+
+TEST(AppParametersTest, switch_and_value_w) {
+	ArgWrapper<wchar_t> args{ L"/path/to/exe", L"--switch", L"-key", L"value" };
 	app_parameters parameters{ args.argc(), args.argv() };
 
 	EXPECT_FALSE(parameters.path().empty());

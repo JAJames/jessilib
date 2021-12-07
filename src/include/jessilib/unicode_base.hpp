@@ -454,7 +454,7 @@ constexpr decode_result decode_codepoint_utf32(std::basic_string_view<CharT> in_
 		return { 0, 0 };
 	}
 
-	return { in_string.front(), 1 };
+	return { static_cast<char32_t>(in_string.front()), 1 };
 }
 
 template<typename CharT>
