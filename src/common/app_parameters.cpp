@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2019 Jessica James.
+ * Copyright (C) 2019-2021 Jessica James.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -22,53 +22,23 @@
 
 namespace jessilib {
 
-template<typename CharT,
-    std::enable_if_t<std::is_same_v<std::remove_cvref_t<CharT>, char>>* = nullptr>
-std::vector<app_parameters::string_type> vectorize(CharT** in_ntarg_array) {
-	std::vector<app_parameters::string_type> result;
-	if (in_ntarg_array == nullptr) {
-		return result;
-	}
-
-	for (auto argv = in_ntarg_array; *argv != nullptr; ++argv) {
-		result.emplace_back(mbstring_to_ustring<char8_t>(*argv).second);
-	}
-
-	return result;
-}
-
-template<typename CharT,
-	std::enable_if_t<std::is_same_v<std::remove_cvref_t<CharT>, wchar_t>>* = nullptr>
-std::vector<app_parameters::string_type> vectorize(CharT** in_ntarg_array) {
-	std::vector<app_parameters::string_type> result;
-	if (in_ntarg_array == nullptr) {
-		return result;
-	}
-
-	for (auto argv = in_ntarg_array; *argv != nullptr; ++argv) {
-		result.emplace_back(jessilib::string_cast<char8_t>(std::wstring_view{ *argv }));
-	}
-
-	return result;
-}
-
 app_parameters::app_parameters(int, char** in_argv, char** in_envp)
-	: app_parameters{ vectorize(in_argv), vectorize(in_envp) } {
+	: app_parameters{ vectorize_ntargs(in_argv), vectorize_ntargs(in_envp) } {
 	// Empty ctor body
 }
 
 app_parameters::app_parameters(int, const char** in_argv, const char** in_envp)
-	: app_parameters{ vectorize(in_argv), vectorize(in_envp) } {
+	: app_parameters{ vectorize_ntargs(in_argv), vectorize_ntargs(in_envp) } {
 	// Empty ctor body
 }
 
 app_parameters::app_parameters(int, wchar_t** in_argv, wchar_t** in_envp)
-	: app_parameters{ vectorize(in_argv), vectorize(in_envp) } {
+	: app_parameters{ vectorize_ntargs(in_argv), vectorize_ntargs(in_envp) } {
 	// Empty ctor body
 }
 
 app_parameters::app_parameters(int, const wchar_t** in_argv, const wchar_t** in_envp)
-	: app_parameters{ vectorize(in_argv), vectorize(in_envp) } {
+	: app_parameters{ vectorize_ntargs(in_argv), vectorize_ntargs(in_envp) } {
 	// Empty ctor body
 }
 

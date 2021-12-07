@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2019 Jessica James.
+ * Copyright (C) 2019-2021 Jessica James.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,7 @@
  */
 
 #include "object.hpp"
-#include "unicode_compare.hpp"
+#include "unicode.hpp"
 
 namespace jessilib {
 
@@ -60,5 +60,51 @@ private:
 	map_type m_env_values;
 	map_type m_values;
 };
+
+/**
+ * Converts null-terminated argument array of null-terminated strings to a vector of unicode strings
+ *
+ * @tparam OutCharT Unicode character data type
+ * @tparam InCharT Input character type (char for multi-byte string, or wchar_t for wide character strings)
+ * @param in_ntarg_array Null-terminated argument array to vectorize
+ * @return A vector of unicode strings recoded from the input
+ */
+template<typename OutCharT = char8_t, typename InCharT,
+	std::enable_if_t<std::is_same_v<std::remove_cvref_t<InCharT>, char>>* = nullptr>
+std::vector<std::basic_string<OutCharT>> vectorize_ntargs(InCharT** in_ntarg_array) {
+	std::vector<std::basic_string<OutCharT>> result;
+	if (in_ntarg_array == nullptr) {
+		return result;
+	}
+
+	for (auto argv = in_ntarg_array; *argv != nullptr; ++argv) {
+		result.emplace_back(mbstring_to_ustring<OutCharT>(*argv).second);
+	}
+
+	return result;
+}
+
+/**
+ * Converts null-terminated argument array of null-terminated strings to a vector of unicode strings
+ *
+ * @tparam OutCharT Unicode character data type
+ * @tparam InCharT Input character type (char for multi-byte string, or wchar_t for wide character strings)
+ * @param in_ntarg_array Null-terminated argument array to vectorize
+ * @return A vector of unicode strings recoded from the input
+ */
+template<typename OutCharT = char8_t, typename InCharT,
+	std::enable_if_t<std::is_same_v<std::remove_cvref_t<InCharT>, wchar_t>>* = nullptr>
+std::vector<std::basic_string<OutCharT>> vectorize_ntargs(InCharT** in_ntarg_array) {
+	std::vector<std::basic_string<OutCharT>> result;
+	if (in_ntarg_array == nullptr) {
+		return result;
+	}
+
+	for (auto argv = in_ntarg_array; *argv != nullptr; ++argv) {
+		result.emplace_back(jessilib::string_cast<OutCharT>(std::wstring_view{ *argv }));
+	}
+
+	return result;
+}
 
 } // namespace jessilib

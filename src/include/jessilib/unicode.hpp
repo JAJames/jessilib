@@ -198,7 +198,7 @@ std::pair<bool, std::basic_string<CharT>> mbstring_to_ustring(std::string_view i
 			return result;
 		}
 
-		// bytes_read will never be 0 except for null characters, which are excluded from our view; here for future reuse
+		// bytes_read is 0 for null characters; ensure null characters are also removed from the view
 		bytes_read = std::max(size_t{1}, bytes_read);
 		in_mbstring.remove_prefix(bytes_read);
 		encode_codepoint(result.second, codepoint);
