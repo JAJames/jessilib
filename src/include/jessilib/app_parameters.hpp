@@ -17,11 +17,15 @@
  */
 
 #include "object.hpp"
+#include "unicode_compare.hpp"
 
 namespace jessilib {
 
 class app_parameters {
 public:
+	using set_type = std::unordered_set<std::u8string, jessilib::text_hashi, jessilib::text_equali>;
+	using map_type = std::unordered_map<std::u8string, std::u8string, jessilib::text_hashi, jessilib::text_equali>;
+
 	app_parameters(int in_argc, char** in_argv, char** in_envp = nullptr);
 	app_parameters(int in_argc, const char** in_argv, const char** in_envp = nullptr);
 	app_parameters(int in_argc, wchar_t** in_argv, wchar_t** in_envp = nullptr);
@@ -32,8 +36,8 @@ public:
 	const std::vector<std::u8string>& arguments() const;
 
 	const std::vector<std::u8string>& switches() const;
-	const std::unordered_set<std::u8string>& switches_set() const;
-	const std::unordered_map<std::u8string, std::u8string>& values() const;
+	const set_type& switches_set() const;
+	const map_type& values() const;
 	jessilib::object as_object() const;
 
 	bool has_switch(std::u8string_view in_switch) const;
@@ -47,9 +51,9 @@ private:
 	std::u8string m_path;
 	std::vector<std::u8string> m_args;
 	std::vector<std::u8string> m_switches;
-	std::unordered_set<std::u8string> m_switches_set;
-	std::unordered_map<std::u8string, std::u8string> m_arg_values;
-	std::unordered_map<std::u8string, std::u8string> m_env_values;
+	set_type m_switches_set;
+	map_type m_arg_values;
+	map_type m_env_values;
 };
 
 } // namespace jessilib

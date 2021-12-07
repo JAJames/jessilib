@@ -159,7 +159,7 @@ app_parameters::app_parameters(std::vector<std::u8string> in_args, std::vector<s
 	flush_value();
 
 	// Populate m_switches_set from m_switches
-	m_switches_set = std::unordered_set<std::u8string>{ m_switches.begin(), m_switches.end() };
+	m_switches_set = { m_switches.begin(), m_switches.end() };
 }
 
 std::u8string_view app_parameters::path() const {
@@ -174,11 +174,11 @@ const std::vector<std::u8string>& app_parameters::switches() const {
 	return m_switches;
 }
 
-const std::unordered_set<std::u8string>& app_parameters::switches_set() const {
+const app_parameters::set_type& app_parameters::switches_set() const {
 	return m_switches_set;
 }
 
-const std::unordered_map<std::u8string, std::u8string>& app_parameters::values() const {
+const app_parameters::map_type& app_parameters::values() const {
 	return m_arg_values;
 }
 
@@ -196,7 +196,8 @@ object app_parameters::as_object() const {
 		{ u8"Path"s, m_path },
 		{ u8"Args"s, m_args },
 		{ u8"Switches"s, m_switches },
-		{ u8"Values"s, m_arg_values }
+		{ u8"Values"s, m_arg_values },
+		{ u8"Env"s, m_env_values }
 	};
 }
 
