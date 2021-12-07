@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <cuchar>
 #include "unicode_compare.hpp"
 
 namespace jessilib {
@@ -174,6 +175,65 @@ std::basic_string<OutCharT> string_cast(const InT& in_string) {
 
 		return result;
 	}
+}
+
+/**
+ * Recodes a multi-byte string into a unicode-encoded string
+ *
+ * @tparam CharT Character type for resulting unicode string
+ * @param in_mbs Multibyte string to recode
+ * @return A pair containing a boolean which is true on success, and a unicode string
+ */
+template<typename CharT>
+std::pair<bool, std::basic_string<CharT>> mbstring_to_ustring(std::string_view in_mbstring) {
+	std::pair<bool, std::basic_string<CharT>> result;
+
+	std::mbstate_t mbstate{};
+	while (!in_mbstring.empty()) {
+		char32_t codepoint{};
+		size_t bytes_read = std::mbrtoc32(&codepoint, in_mbstring.data(), in_mbstring.size(), &mbstate);
+		if (bytes_read > in_mbstring.size()) {
+			// Some sort of error; return
+			result.first = false;
+			return result;
+		}
+
+		// bytes_read will never be 0 except for null characters, which are excluded from our view; here for future reuse
+		bytes_read = std::max(size_t{1}, bytes_read);
+		in_mbstring.remove_prefix(bytes_read);
+		encode_codepoint(result.second, codepoint);
+	}
+
+	result.first = true;
+	return result;
+}
+
+/**
+ * Recodes a unicode string into a multi-byte string
+ * @tparam CharT Character type for input unicode string
+ * @param in_string Unicode string to recode
+ * @return A pair containing a boolean which is true on success, and a multi-byte string
+ */
+template<typename CharT>
+std::pair<bool, std::string> ustring_to_mbstring(std::basic_string_view<CharT> in_string) {
+	std::pair<bool, std::string> result;
+
+	std::mbstate_t mbstate{};
+	decode_result decode;
+	while ((decode = decode_codepoint(in_string).units != 0)) {
+		char buffer[MB_CUR_MAX]; // MB_LEN_MAX
+		size_t bytes_written = std::c32rtomb(buffer, decode.codepoint, &mbstate);
+		if (bytes_written > MB_CUR_MAX) {
+			// Invalid codepoint; return
+			result.first = false;
+			return result;
+		}
+
+		result.second.append(buffer, bytes_written);
+	}
+
+	result.first = true;
+	return result;
 }
 
 /**

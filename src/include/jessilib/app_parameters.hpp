@@ -23,37 +23,42 @@ namespace jessilib {
 
 class app_parameters {
 public:
-	using set_type = std::unordered_set<std::u8string, jessilib::text_hashi, jessilib::text_equali>;
-	using map_type = std::unordered_map<std::u8string, std::u8string, jessilib::text_hashi, jessilib::text_equali>;
+	using string_type = std::u8string;
+	using string_view_type = std::u8string_view;
+	using set_type = std::unordered_set<string_type, jessilib::text_hashi, jessilib::text_equali>;
+	using map_type = std::unordered_map<string_type, string_type, jessilib::text_hashi, jessilib::text_equali>;
 
 	app_parameters(int in_argc, char** in_argv, char** in_envp = nullptr);
 	app_parameters(int in_argc, const char** in_argv, const char** in_envp = nullptr);
 	app_parameters(int in_argc, wchar_t** in_argv, wchar_t** in_envp = nullptr);
 	app_parameters(int in_argc, const wchar_t** in_argv, const wchar_t** in_envp = nullptr);
-	app_parameters(std::vector<std::u8string> in_args, std::vector<std::u8string> in_env = {});
+	app_parameters(std::vector<string_type> in_args, std::vector<string_type> in_env = {});
 
-	std::u8string_view path() const;
-	const std::vector<std::u8string>& arguments() const;
+	[[nodiscard]] string_view_type path() const;
+	[[nodiscard]] const std::vector<string_type>& arguments() const;
 
-	const std::vector<std::u8string>& switches() const;
-	const set_type& switches_set() const;
-	const map_type& values() const;
-	jessilib::object as_object() const;
+	[[nodiscard]] const std::vector<string_type>& switches() const;
+	[[nodiscard]] const set_type& switches_set() const;
+	[[nodiscard]] const map_type& arg_values() const;
+	[[nodiscard]] const map_type& env_values() const;
+	[[nodiscard]] const map_type& values() const;
+	[[nodiscard]] jessilib::object as_object() const;
 
-	bool has_switch(std::u8string_view in_switch) const;
-	std::u8string_view get_arg_value(std::u8string_view in_key, std::u8string_view in_default = {}) const;
-	std::u8string_view get_env_value(std::u8string_view in_key, std::u8string_view in_default = {}) const;
-	std::u8string_view get_value(std::u8string_view in_key, std::u8string_view in_default = {}) const;
+	[[nodiscard]] bool has_switch(string_view_type in_switch) const;
+	[[nodiscard]] string_view_type get_arg_value(string_view_type in_key, string_view_type in_default = {}) const;
+	[[nodiscard]] string_view_type get_env_value(string_view_type in_key, string_view_type in_default = {}) const;
+	[[nodiscard]] string_view_type get_value(string_view_type in_key, string_view_type in_default = {}) const;
 
-	operator jessilib::object() const { return as_object(); }
+	[[nodiscard]] inline operator jessilib::object() const { return as_object(); }
 
 private:
-	std::u8string m_path;
-	std::vector<std::u8string> m_args;
-	std::vector<std::u8string> m_switches;
+	string_type m_path;
+	std::vector<string_type> m_args;
+	std::vector<string_type> m_switches;
 	set_type m_switches_set;
 	map_type m_arg_values;
 	map_type m_env_values;
+	map_type m_values;
 };
 
 } // namespace jessilib
