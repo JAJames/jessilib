@@ -19,6 +19,7 @@
 #include "parsers/json.hpp"
 #include <charconv>
 #include "unicode.hpp"
+#include "unicode_sequence.hpp"
 #include "util.hpp"
 
 using namespace std::literals;
@@ -101,135 +102,41 @@ std::u8string read_json_string(std::string_view& in_data) {
 	// Remove leading quotation
 	in_data.remove_prefix(1);
 
-	// Iterate over view until we reach the ending quotation, or the end of the view
-	while (!in_data.empty()) {
-		switch (in_data.front()) {
-			// Escape sequence
-			case '\\':
-				// strip '\'
-				in_data.remove_prefix(1);
-				if (in_data.empty()) {
-					throw std::invalid_argument{ "Invalid JSON data; unexpected end of data when parsing escape sequence" };
-				}
-
-				// Parse escape type
-				switch (in_data.front()) {
-					// Quote
-					case '\"':
-						in_data.remove_prefix(1);
-						result += u8'\"';
-						break;
-
-					// Backslash
-					case '\\':
-						in_data.remove_prefix(1);
-						result += u8'\\';
-						break;
-
-					// Forward slash
-					case '/':
-						in_data.remove_prefix(1);
-						result += u8'/';
-						break;
-
-					// Backspace
-					case 'b':
-						in_data.remove_prefix(1);
-						result += u8'\b';
-						break;
-
-					// Formfeed
-					case 'f':
-						in_data.remove_prefix(1);
-						result += u8'\f';
-						break;
-
-					// Newline
-					case 'n':
-						in_data.remove_prefix(1);
-						result += u8'\n';
-						break;
-
-					// Carriage return
-					case 'r':
-						in_data.remove_prefix(1);
-						result += u8'\r';
-						break;
-
-					// Horizontal tab
-					case 't':
-						in_data.remove_prefix(1);
-						result += u8'\t';
-						break;
-
-					// Unicode codepoint
-					case 'u': {
-						in_data.remove_prefix(1); // strip 'u'
-						if (in_data.size() < 4) {
-							throw std::invalid_argument{
-								"Invalid JSON data; unexpected end of data when parsing unicode escape sequence" };
-						}
-
-						char16_t codepoint = get_codepoint_from_hex(in_data);
-						in_data.remove_prefix(4); // strip codepoint hex
-
-						if (is_high_surrogate(codepoint) // If we have a high surrogate...
-							&& in_data.size() >= 6) { // And we have enough room for "\uXXXX"...
-							// Special case: we just parsed a high surrogate. Handle this with the low surrogate, if there is one
-							if (in_data.substr(0, 2) == "\\u"sv) {
-								// Another codepoint follows; read it in
-								in_data.remove_prefix(2); // strip "\u"
-								char16_t second_codepoint = get_codepoint_from_hex(in_data);
-								in_data.remove_prefix(4); // strip codepoint hex
-
-								if (is_low_surrogate(second_codepoint)) {
-									// We've got a valid surrogate pair; serialize the represented codepoint; decode it
-									codepoint = static_cast<char16_t>(decode_surrogate_pair(codepoint, second_codepoint).codepoint);
-									encode_codepoint(result, codepoint); // serialize the real codepoint
-								}
-								else {
-									// This is not a valid surrogate pair; serialize the codepoints directly
-									encode_codepoint(result, codepoint);
-									encode_codepoint(result, second_codepoint);
-								}
-								continue;
-							}
-						}
-
-						encode_codepoint(result, codepoint);
-						continue;
-					}
-
-					default:
-						throw std::invalid_argument{ "Invalid JSON data; unexpected token: '"s + in_data.front() + "' when parsing escape sequence" };
-				}
-
-				break;
-
-			// End of string
-			case '\"':
-				in_data.remove_prefix(1); // strip trailing quotation
-				advance_whitespace(in_data); // strip trailing spaces
-				return result;
-
-			// Unicode sequence
-			default: {
-				auto codepoint = decode_codepoint(in_data);
-				if (codepoint.units == 0) {
-					// Invalid unicode sequence
-					throw std::invalid_argument{ "Invalid JSON data; unexpected token: '"s + in_data.front() + "' when parsing string" };
-				}
-
-				// Valid unicode sequence
-				result.append(reinterpret_cast<const char8_t*>(in_data.data()), codepoint.units);
-				in_data.remove_prefix(codepoint.units);
-				break;
-			}
-		}
+	if (in_data.empty()) {
+		throw std::invalid_argument{ "Invalid JSON data; missing ending quote (\") when parsing string" };
 	}
 
-	// We reached the end of the string_view before encountering an ending quote
-	throw std::invalid_argument{ "Invalid JSON data; missing ending quote (\") when parsing string" };
+	if (in_data.front() == '\"') {
+		in_data.remove_prefix(1);
+		advance_whitespace(in_data); // strip trailing spaces
+		return result;
+	}
+
+	size_t search_start = 1;
+	size_t end_pos;
+	while ((end_pos = in_data.find('\"', search_start)) != std::string_view::npos) {
+		// Quote found; check if it's escaped
+		if (in_data[end_pos - 1] != '\\') {
+			// Unescaped quote; must be end of string
+			break;
+		}
+
+		search_start = end_pos + 1;
+	}
+
+	if (end_pos == std::string_view::npos) {
+		throw std::invalid_argument{ "Invalid JSON data; missing ending quote (\") when parsing string" };
+	}
+
+	std::u8string_view string_data = jessilib::string_view_cast<char8_t>(in_data.substr(0, end_pos));
+	in_data.remove_prefix(string_data.size() + 1);
+	advance_whitespace(in_data); // strip trailing spaces
+	result = string_data;
+	if (!jessilib::apply_cpp_escape_sequences(result)) {
+		throw std::invalid_argument{ jessilib::join<std::string>("Invalid JSON data; invalid token or end of string: "sv, string_data) };
+	}
+
+	return result;
 }
 
 object read_json_number(std::string_view& in_data) {
