@@ -23,15 +23,15 @@
 using namespace std::literals;
 
 // Compile-time tests for constexpr on compilers which support C++20 constexpr std::string
-#ifdef __cpp_lib_constexpr_string
+#if defined(__cpp_lib_constexpr_string) && (__GNUC__ >= 12 || _MSC_VER >= 1929)
 constexpr std::string query_constexpr(std::string_view in_expression) {
 	std::string result{ static_cast<std::string>(in_expression) };
 	jessilib::deserialize_http_query(result);
 	return result;
 }
-static_assert(query_constexpr("test"s) == "test"s);
-static_assert(query_constexpr("first+second"s) == "first second"s);
-static_assert(query_constexpr("first%20second"s) == "first second"s);
+ASSERT_COMPILES_CONSTEXPR(return query_constexpr("test"s) == "test"s);
+ASSERT_COMPILES_CONSTEXPR(return query_constexpr("first+second"s) == "first second"s);
+ASSERT_COMPILES_CONSTEXPR(return query_constexpr("first%20second"s) == "first second"s);
 #endif // __cpp_lib_constexpr_string
 
 using char_types = ::testing::Types<char, char8_t, char16_t, char32_t>;

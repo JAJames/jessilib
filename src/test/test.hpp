@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2018 Jessica James.
+ * Copyright (C) 2018-2021 Jessica James.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -22,7 +22,11 @@
 #include "gtest/gtest.h"
 
 // Helper macros
+#define ASSERT_COMPILES(expr) static_assert([]() { expr; } != nullptr, "Your compiler is whack yo");
+#define ASSERT_COMPILES_CONSTEXPR(expr) static_assert([]() constexpr { expr; } != nullptr, "Your compiler is whack yo");
 #define UNIQUE_LABEL( LABEL ) LABEL ## __LINE__ ## __
 #define repeat( ITERATIONS ) for (size_t UNIQUE_LABEL(iteration_) = 0; UNIQUE_LABEL(iteration_) != (ITERATIONS); ++ UNIQUE_LABEL(iteration_) )
+#define JESSITEST_CONCAT(lhs, rhs) JESSITEST_CONCAT_HELPER(lhs, rhs)
+#define JESSITEST_CONCAT_HELPER(lhs, rhs) lhs ## rhs
 
 using base_test = ::testing::Test;
