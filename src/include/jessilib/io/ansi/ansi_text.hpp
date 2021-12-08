@@ -29,7 +29,7 @@ class text_wrapper : public text {};
 
 // Control characters
 static constexpr uint8_t ESCAPE_CHR{ 0x1B };
-static constexpr std::string_view ESCAPE{ "\x1B[" };
+static constexpr std::u8string_view ESCAPE{ u8"\x1B[" };
 // ESCAPE + '[' + <color or graphics code list> + 'm'
 
 // Graphics modes
@@ -42,16 +42,16 @@ static constexpr uint8_t CONCEALED{ '8' };
 static constexpr uint8_t GRAPHICS_SEP{ ';' };
 static constexpr uint8_t GRAPHICS_END{ 'm' };
 
-static constexpr std::string_view COLOR_HEX{ "38;2" };
-static constexpr std::string_view COLOR_DEFAULT{ "39" };
-static constexpr std::string_view COLOR_BG_HEX{ "48;2" };
-static constexpr std::string_view COLOR_BG_DEFAULT{ "49" };
+static constexpr std::u8string_view COLOR_HEX{ u8"38;2" };
+static constexpr std::u8string_view COLOR_DEFAULT{ u8"39" };
+static constexpr std::u8string_view COLOR_BG_HEX{ u8"48;2" };
+static constexpr std::u8string_view COLOR_BG_DEFAULT{ u8"49" };
 
 } // namespace ansi
 
 template<>
-inline std::string text_to_string<ansi::text_wrapper>(const ansi::text_wrapper& in_text) {
-	std::string result;
+inline std::u8string text_to_string<ansi::text_wrapper>(const ansi::text_wrapper& in_text) {
+	std::u8string result;
 	result.reserve(in_text.string().size() + 8);
 
 	auto set_graphic_option = [&result](auto in_option) {
@@ -65,7 +65,12 @@ inline std::string text_to_string<ansi::text_wrapper>(const ansi::text_wrapper& 
 		}
 
 		// Append graphics option
-		result += in_option;
+		if constexpr (std::is_same_v<decltype(in_option), std::string>) {
+			result += jessilib::string_view_cast<char8_t>(in_option);
+		}
+		else {
+			result += in_option;
+		}
 	};
 
 	// Set graphics properties
@@ -100,7 +105,7 @@ inline std::string text_to_string<ansi::text_wrapper>(const ansi::text_wrapper& 
 	}
 
 	// Append textual string
-	result += jessilib::ustring_to_mbstring(std::u8string_view{in_text.string()}).second;
+	result += in_text.string();
 
 	// Reset (if needed)
 	if (in_text.properties() != text::property::normal) {
@@ -117,10 +122,10 @@ inline std::string text_to_string<ansi::text_wrapper>(const ansi::text_wrapper& 
 } // namespace jessilib
 
 template<>
-struct fmt::formatter<jessilib::io::ansi::text_wrapper> : formatter<std::string> {
+struct fmt::formatter<jessilib::io::ansi::text_wrapper, char8_t> : formatter<std::u8string, char8_t> {
 	template <typename FormatContext>
 	auto format(const jessilib::io::ansi::text_wrapper& in_text, FormatContext& in_context) {
 		// Pass result to base
-		return formatter<std::string>::format(jessilib::io::text_to_string(in_text), in_context);
+		return formatter<std::u8string, char8_t>::format(jessilib::io::text_to_string(in_text), in_context);
 	}
 };

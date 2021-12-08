@@ -33,7 +33,7 @@ public:
 
 	/** Additional contextual details */
 	jessilib::object details() const override;
-	std::string getText(std::string_view tag) const override;
+	std::u8string getText(std::u8string_view tag) const override;
 }; // class console_command_context
 
 } // namespace io

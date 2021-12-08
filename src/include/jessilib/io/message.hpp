@@ -23,6 +23,7 @@
 #include <string_view>
 #include <type_traits>
 #include <fmt/format.h>
+#include <fmt/xchar.h>
 #include "jessilib/unicode.hpp"
 #include "color.hpp"
 
@@ -155,13 +156,13 @@ private:
 class formatted_message {
 public:
 	template<typename... Args>
-	formatted_message(std::string in_format, Args&& ... args)
+	formatted_message(std::u8string in_format, Args&& ... args)
 		: m_format{ std::move(in_format) },
 		m_message{ std::forward<Args>(args)... } {
 		// Empty ctor body
 	}
 
-	const std::string& format() const {
+	const std::u8string& format() const {
 		return m_format;
 	}
 
@@ -170,12 +171,12 @@ public:
 	}
 
 private:
-	std::string m_format;
+	std::u8string m_format;
 	std::vector<text> m_message;
 };
 
 template<typename WrapperT>
-std::string text_to_string(const WrapperT& in_text) {
+std::u8string text_to_string(const WrapperT& in_text) {
 	return in_text.string();
 }
 
@@ -209,18 +210,23 @@ std::string process_message(const jessilib::io::message& msg) {
 }
 
 template<typename WrapperT>
-std::string process_message(const jessilib::io::formatted_message& msg) {
-	using format_arg = fmt::format_args::format_arg;
-	std::vector<format_arg> args;
+std::u8string process_message(const jessilib::io::formatted_message& msg) {
+	using FormatCharT = char8_t;
+	using format_args_type = fmt::basic_format_args<fmt::buffer_context<FormatCharT>>;
+	using format_arg_type = format_args_type::format_arg;
+	using format_context_type = fmt::buffer_context<FormatCharT>;
+	using string_view_type = fmt::v8::basic_string_view<FormatCharT>;
 
 	// Populate args
+	std::vector<format_arg_type> args;
 	for (auto& text : msg.get_message()) {
-		args.emplace_back(fmt::detail::make_arg<fmt::format_context>(wrap_text<WrapperT>(text)));
+		args.emplace_back(fmt::detail::make_arg<format_context_type>(wrap_text<WrapperT>(text)));
 	}
 
 	// Pass args into vformat
-	fmt::format_args text_args{ args.data(), static_cast<int>(args.size()) };
-	return fmt::vformat(msg.format(), text_args);
+	format_args_type text_args{ args.data(), static_cast<int>(args.size()) };
+	string_view_type fmt_view{ msg.format().data(), msg.format().size() };
+	return fmt::vformat(fmt_view, text_args);
 }
 
 } // namespace io

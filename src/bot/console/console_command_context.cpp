@@ -47,7 +47,7 @@ jessilib::object console_command_context::details() const {
 	return s_details;
 }
 
-std::string console_command_context::getText(std::string_view tag) const {
+std::u8string console_command_context::getText(std::u8string_view tag) const {
 	return { tag.begin(), tag.end() }; // TODO: implement properly
 }
 

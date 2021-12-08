@@ -38,8 +38,8 @@ void console_input_loop() {
 		if (!command_manager::instance().execute_command(context)) {
 			text error_text{ u8"ERROR", text::property::bold, color{ 0xFF0000 }};
 			text keyword_text{ context.keyword(), text::property::bold, color{ 0x0000FF }};
-			auto result = process_message<ansi::text_wrapper>(formatted_message{"{} Command \"{}\" not found", error_text, keyword_text});
-			std::cout << result << std::endl;
+			auto result = process_message<ansi::text_wrapper>(formatted_message{u8"{} Command \"{}\" not found", error_text, keyword_text});
+			std::wcout << jessilib::string_cast<wchar_t>(result) << std::endl;
 		}
 	}
 }

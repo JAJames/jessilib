@@ -29,7 +29,7 @@ using namespace std::literals;
 command quit_command{ [](command_context& context) {
 	using namespace jessilib::io;
 	text quit_text{ u8"Closing jessibot", text::property::bold, color{ 0xFF0000 } }; // TODO: localize
-	context.publicReply(formatted_message{ "{}", quit_text });
+	context.publicReply(formatted_message{ u8"{}", quit_text });
 	notify_shutdown();
 }, u8"quit" };
 
@@ -40,19 +40,19 @@ command help_command{ [](command_context& context) {
 
 	if (table_name.empty()) {
 		text error_text{ u8"ERROR", text::property::bold, color{ 0xFF0000 } }; // TODO: localize
-		context.publicReply(formatted_message{ "{} command context is missing permission table name", error_text });
+		context.publicReply(formatted_message{ u8"{} command context is missing permission table name", error_text });
 		return;
 	}
 
 	// table examples: "console", "irc", "irc+", "irc%", "irc@"; should table instead be 'tables'?
 
 	text table_text{ table_name, text::property::bold, color{ 0x0000FF } };
-	context.publicReply(formatted_message{ "Commands for table '{}':", table_text });
+	context.publicReply(formatted_message{ u8"Commands for table '{}':", table_text });
 
 	// TODO: read some permission table and filter commands based upon permission and context information
 	const command_manager& manager = command_manager::instance();
 	manager.foreach([&context](basic_command* in_command) {
-		context.publicReply(formatted_message{ "{}", in_command->label() });
+		context.publicReply(formatted_message{ u8"{}", in_command->label() });
 		return true;
 	});
 }, u8"help" };

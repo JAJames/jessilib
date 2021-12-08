@@ -43,7 +43,7 @@ public:
 
 	/** Additional contextual details */
 	virtual object details() const = 0; // Additional details
-	virtual std::string getText(std::string_view tag) const = 0; // Get localized text
+	virtual std::u8string getText(std::u8string_view tag) const = 0; // Get localized text
 
 private:
 	string_type m_input;

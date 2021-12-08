@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "io/message.hpp"
+#include "jessilib/io/message.hpp"
 
 namespace jessilib {
 namespace io {
@@ -45,19 +45,19 @@ static constexpr color s_irc_colors[] {
 #endif // JESSILIB_IRC_SIMPLE_COLORS
 };
 
-static constexpr std::string_view s_irc_color_codes[] {
+static constexpr std::u8string_view s_irc_color_codes[] {
 	// Basic 16 colors (0-15)
-	"00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15",
+	u8"00", u8"01", u8"02", u8"03", u8"04", u8"05", u8"06", u8"07", u8"08", u8"09", u8"10", u8"11", u8"12", u8"13", u8"14", u8"15",
 
 #ifndef JESSILIB_IRC_SIMPLE_COLORS
 	// Extended colors (16-98, making a total of 99 color choices)
-	"16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27",
-	"28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
-	"40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51",
-	"52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63",
-	"64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75",
-	"76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87",
-	"88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98"
+	u8"16", u8"17", u8"18", u8"19", u8"20", u8"21", u8"22", u8"23", u8"24", u8"25", u8"26", u8"27",
+	u8"28", u8"29", u8"30", u8"31", u8"32", u8"33", u8"34", u8"35", u8"36", u8"37", u8"38", u8"39",
+	u8"40", u8"41", u8"42", u8"43", u8"44", u8"45", u8"46", u8"47", u8"48", u8"49", u8"50", u8"51",
+	u8"52", u8"53", u8"54", u8"55", u8"56", u8"57", u8"58", u8"59", u8"60", u8"61", u8"62", u8"63",
+	u8"64", u8"65", u8"66", u8"67", u8"68", u8"69", u8"70", u8"71", u8"72", u8"73", u8"74", u8"75",
+	u8"76", u8"77", u8"78", u8"79", u8"80", u8"81", u8"82", u8"83", u8"84", u8"85", u8"86", u8"87",
+	u8"88", u8"89", u8"90", u8"91", u8"92", u8"93", u8"94", u8"95", u8"96", u8"97", u8"98"
 #endif // JESSILIB_IRC_SIMPLE_COLORS
 };
 
@@ -98,7 +98,7 @@ constexpr color normalize_color(color in_color) {
 	return s_irc_colors[from_color(in_color)];
 }
 
-constexpr std::string_view color_to_code(color in_color) {
+constexpr std::u8string_view color_to_code(color in_color) {
 	return s_irc_color_codes[from_color(in_color)];
 }
 
@@ -112,7 +112,7 @@ static constexpr uint8_t COLOR_HEX{ 0x04 };
 static constexpr uint8_t REVERSE{ 0x16 };
 static constexpr uint8_t NORMAL{ 0x0F };
 
-text::property properties_to_toggle(text::property in_active_properties, text::property in_text_properties, uint8_t in_active_color, uint8_t in_text_color, uint8_t in_active_color_bg, uint8_t in_text_color_bg) {
+inline text::property properties_to_toggle(text::property in_active_properties, text::property in_text_properties, uint8_t in_active_color, uint8_t in_text_color, uint8_t in_active_color_bg, uint8_t in_text_color_bg) {
 	text::property_backing_t active_properties_backing = static_cast<text::property_backing_t>(in_active_properties);
 	text::property_backing_t text_properties_backing = static_cast<text::property_backing_t>(in_text_properties);
 
@@ -138,8 +138,8 @@ text::property properties_to_toggle(text::property in_active_properties, text::p
 } // namespace irc
 
 template<>
-inline std::string text_to_string<irc::text_wrapper>(const irc::text_wrapper& in_text) {
-	std::string result;
+inline std::u8string text_to_string<irc::text_wrapper>(const irc::text_wrapper& in_text) {
+	std::u8string result;
 	result.reserve(in_text.string().size() + 8);
 
 	// Prepend properties
@@ -178,10 +178,10 @@ inline std::string text_to_string<irc::text_wrapper>(const irc::text_wrapper& in
 } // namespace jessilib
 
 template<>
-struct fmt::formatter<jessilib::io::irc::text_wrapper> : formatter<std::string> {
+struct fmt::formatter<jessilib::io::irc::text_wrapper, char8_t> : formatter<std::u8string, char8_t> {
 	template <typename FormatContext>
 	auto format(const jessilib::io::irc::text_wrapper& in_text, FormatContext& in_context) {
 		// Pass result to base
-		return formatter<std::string>::format(jessilib::io::text_to_string(in_text), in_context);
+		return formatter<std::u8string, char8_t>::format(jessilib::io::text_to_string(in_text), in_context);
 	}
 };
