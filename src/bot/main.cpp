@@ -24,7 +24,7 @@
 int main(int argc, char** argv) {
 	jessilib::app_parameters parameters{ argc, argv };
 
-	if (parameters.has_switch("echoParameters")) {
+	if (parameters.has_switch(u8"echoParameters")) {
 		// TODO: Write pretty JSON serializer based on JSON serializer
 		std::cout << std::endl << jessilib::json_parser{}.serialize(parameters) << std::endl;
 	}

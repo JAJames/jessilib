@@ -65,11 +65,11 @@ void text::set_color_bg(color in_color) {
 
 /** Text */
 
-const std::string& text::string() const {
+const std::u8string& text::string() const {
 	return m_string;
 }
 
-void text::set_string(std::string_view in_string) {
+void text::set_string(std::u8string_view in_string) {
 	m_string = in_string;
 }
 

@@ -27,7 +27,9 @@ namespace io {
 /** Reply */
 bool console_command_context::privateReply(const jessilib::io::formatted_message& in_message) {
 	auto result = jessilib::io::process_message<jessilib::io::ansi::text_wrapper>(in_message);
-	std::cout << result << std::endl;
+	// TODO check locale before printing to see if console is using UTF-8; if so we can just chuck this straight to cout
+	// instead of leveraging to wchar_t
+	std::wcout << jessilib::string_cast<wchar_t>(result) << std::endl;
 	return true;
 }
 
@@ -39,7 +41,7 @@ bool console_command_context::publicReply(const jessilib::io::formatted_message&
 /** Additional contextual details */
 jessilib::object console_command_context::details() const {
 	static jessilib::object s_details {
-		jessilib::object::map_type{ { "table", "console" } }
+		jessilib::object::map_type{ { u8"table", u8"console" } }
 	};
 
 	return s_details;

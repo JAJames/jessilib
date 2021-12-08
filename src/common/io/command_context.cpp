@@ -21,52 +21,54 @@
 namespace jessilib {
 namespace io {
 
-command_context::command_context(std::string_view in_input)
-	: m_input{ in_input } {
+command_context::command_context(string_type in_input)
+	: m_input{ std::move(in_input) } {
+	std::u8string_view input_view = m_input;
+
 	// Strip leading whitespace
-	std::size_t pos = in_input.find_first_not_of(' ');
+	std::size_t pos = input_view.find_first_not_of(u8' ');
 	if (pos != std::string_view::npos) {
-		in_input.remove_prefix(pos);
+		input_view.remove_prefix(pos);
 
 		// Whitespace is stripped; parse keyword from input
-		pos = in_input.find(' ');
+		pos = input_view.find(u8' ');
 		if (pos == std::string_view::npos) {
-			pos = in_input.size();
+			pos = input_view.size();
 		}
-		m_keyword = in_input.substr(0, pos);
-		in_input.remove_prefix(pos);
+		m_keyword = input_view.substr(0, pos);
+		input_view.remove_prefix(pos);
 
 		// Strip leading whitespace and parse parameter from remaining input
-		pos = in_input.find_first_not_of(' ');
+		pos = input_view.find_first_not_of(u8' ');
 		if (pos != std::string_view::npos) {
-			in_input.remove_prefix(pos);
-			m_parameter = in_input;
+			input_view.remove_prefix(pos);
+			m_parameter = input_view;
 		}
 	}
 }
 
-command_context::command_context(std::string_view in_input, std::string_view in_keyword, std::string_view in_parameter)
+command_context::command_context(string_type in_input, string_type in_keyword, string_type in_parameter)
 	: m_input{ std::move(in_input) },
 	m_keyword{ std::move(in_keyword) },
 	m_parameter{ std::move(in_parameter) } {
 	// Empty ctor body
 }
 
-std::string_view command_context::input() const {
+const command_context::string_type& command_context::input() const {
 	return m_input;
 }
 
-std::string_view command_context::keyword() const {
+const command_context::string_type& command_context::keyword() const {
 	return m_keyword;
 }
 
-std::string_view command_context::parameter() const {
+const command_context::string_type& command_context::parameter() const {
 	return m_parameter;
 }
 
-std::vector<std::string_view> command_context::paramaters() const {
-	std::vector<std::string_view> result;
-	std::string_view parameter = m_parameter;
+std::vector<std::u8string_view> command_context::paramaters() const {
+	std::vector<std::u8string_view> result;
+	std::u8string_view parameter = m_parameter;
 
 	// Strip leading whitespace
 	std::size_t pos = parameter.find_first_not_of(' ');

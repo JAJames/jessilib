@@ -22,7 +22,7 @@
 namespace jessilib {
 namespace io {
 
-command::command(callback_t in_callback, std::string_view in_label)
+command::command(callback_t in_callback, std::u8string_view in_label)
 	: m_callback{ std::move(in_callback) },
 	m_label{ std::move(in_label) } {
 	// Register command
@@ -34,7 +34,7 @@ command::~command() {
 	command_manager::instance().unregister_command(*this);
 }
 
-std::string_view command::label() const {
+std::u8string_view command::label() const {
 	return m_label;
 }
 
@@ -44,7 +44,7 @@ void command::execute(command_context& in_context) const {
 
 command test_command{ [](command_context&) {
 	// do stuff
-}, "test" };
+}, u8"test" };
 
 } // namespace io
 } // namespace jessilib

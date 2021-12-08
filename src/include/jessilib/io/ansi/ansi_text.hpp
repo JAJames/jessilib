@@ -100,7 +100,7 @@ inline std::string text_to_string<ansi::text_wrapper>(const ansi::text_wrapper& 
 	}
 
 	// Append textual string
-	result += in_text.string();
+	result += jessilib::ustring_to_mbstring(std::u8string_view{in_text.string()}).second;
 
 	// Reset (if needed)
 	if (in_text.properties() != text::property::normal) {

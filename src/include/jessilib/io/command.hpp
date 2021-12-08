@@ -28,7 +28,7 @@ namespace io {
 class basic_command {
 public:
 	virtual ~basic_command() = default;
-	virtual std::string_view label() const = 0;
+	virtual std::u8string_view label() const = 0;
 	virtual void execute(command_context& in_context) const = 0;
 }; // class basic_command
 
@@ -45,20 +45,20 @@ public:
 	command& operator=(command&&) = delete;
 
 	// Instantiates and self-registers a command
-	command(callback_t in_callback, std::string_view in_label);
+	command(callback_t in_callback, std::u8string_view in_label);
 
 	// Cleans up and unregisters the command
 	virtual ~command();
 
 	// Unique label associated with command
-	virtual std::string_view label() const override;
+	virtual std::u8string_view label() const override;
 
 	// Executes the command
 	virtual void execute(command_context& in_context) const override;
 
 private:
 	callback_t m_callback;
-	std::string_view m_label;
+	std::u8string_view m_label;
 }; // class command
 
 } // namespace io

@@ -30,13 +30,13 @@ namespace io {
 void console_input_loop() {
 	using namespace jessilib::io;
 
-	std::string input;
+	std::wstring input;
 	auto shutdown_future = get_shutdown_future();
 	while (shutdown_future.wait_for(std::chrono::milliseconds(10)) != std::future_status::ready) {
-		std::getline(std::cin, input); // TODO: use a non-bloicking call and poll running periodically
-		jessibot::io::console_command_context context{ input };
+		std::getline(std::wcin, input); // TODO: use a non-bloicking call and poll running periodically?
+		jessibot::io::console_command_context context{ jessilib::string_cast<char8_t>(input) };
 		if (!command_manager::instance().execute_command(context)) {
-			text error_text{ "ERROR", text::property::bold, color{ 0xFF0000 }};
+			text error_text{ u8"ERROR", text::property::bold, color{ 0xFF0000 }};
 			text keyword_text{ context.keyword(), text::property::bold, color{ 0x0000FF }};
 			auto result = process_message<ansi::text_wrapper>(formatted_message{"{} Command \"{}\" not found", error_text, keyword_text});
 			std::cout << result << std::endl;

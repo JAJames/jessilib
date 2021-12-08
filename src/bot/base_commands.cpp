@@ -24,21 +24,22 @@ namespace jessibot {
 namespace io {
 
 using namespace jessilib::io;
+using namespace std::literals;
 
 command quit_command{ [](command_context& context) {
 	using namespace jessilib::io;
-	text quit_text{ "Closing jessibot", text::property::bold, color{ 0xFF0000 } }; // TODO: localize
+	text quit_text{ u8"Closing jessibot", text::property::bold, color{ 0xFF0000 } }; // TODO: localize
 	context.publicReply(formatted_message{ "{}", quit_text });
 	notify_shutdown();
-}, "quit" };
+}, u8"quit" };
 
 // ISSUE: help command has no way to know what commands exist for the given context
 command help_command{ [](command_context& context) {
 	auto details = context.details();
-	auto table_name = details["table"].get<std::string>();
+	auto table_name = details[u8"table"s].get<std::u8string>();
 
 	if (table_name.empty()) {
-		text error_text{ "ERROR", text::property::bold, color{ 0xFF0000 } }; // TODO: localize
+		text error_text{ u8"ERROR", text::property::bold, color{ 0xFF0000 } }; // TODO: localize
 		context.publicReply(formatted_message{ "{} command context is missing permission table name", error_text });
 		return;
 	}
@@ -54,7 +55,7 @@ command help_command{ [](command_context& context) {
 		context.publicReply(formatted_message{ "{}", in_command->label() });
 		return true;
 	});
-}, "help" };
+}, u8"help" };
 
 } // namespace io
 } // namespace jessibot

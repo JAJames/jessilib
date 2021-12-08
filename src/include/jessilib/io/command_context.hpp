@@ -27,14 +27,15 @@ namespace io {
 
 class command_context {
 public:
-	command_context(std::string_view in_input);
-	command_context(std::string_view in_input, std::string_view in_keyword, std::string_view in_parameter);
+	using string_type = std::u8string;
+	command_context(string_type in_input);
+	command_context(string_type in_input, string_type in_keyword, string_type in_parameter);
 
 	/** User input */
-	std::string_view input() const;
-	std::string_view keyword() const;
-	std::string_view parameter() const;
-	std::vector<std::string_view> paramaters() const;
+	const string_type& input() const;
+	const string_type& keyword() const;
+	const string_type& parameter() const;
+	std::vector<std::u8string_view> paramaters() const;
 
 	/** Reply */
 	virtual bool privateReply(const formatted_message& in_message) = 0; // Reply to invoker privately (i.e: PM)
@@ -45,9 +46,9 @@ public:
 	virtual std::string getText(std::string_view tag) const = 0; // Get localized text
 
 private:
-	std::string_view m_input;
-	std::string_view m_keyword;
-	std::string_view m_parameter;
+	string_type m_input;
+	string_type m_keyword;
+	string_type m_parameter;
 }; // class command_context
 
 } // namespace io

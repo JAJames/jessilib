@@ -220,7 +220,9 @@ std::pair<bool, std::string> ustring_to_mbstring(std::basic_string_view<CharT> i
 
 	std::mbstate_t mbstate{};
 	decode_result decode;
-	while ((decode = decode_codepoint(in_string).units != 0)) {
+	while ((decode = decode_codepoint(in_string)).units != 0) {
+		in_string.remove_prefix(decode.units);
+
 		char buffer[MB_CUR_MAX]; // MB_LEN_MAX
 		size_t bytes_written = std::c32rtomb(buffer, decode.codepoint, &mbstate);
 		if (bytes_written > MB_CUR_MAX) {

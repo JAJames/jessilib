@@ -23,6 +23,7 @@
 #include <string_view>
 #include <type_traits>
 #include <fmt/format.h>
+#include "jessilib/unicode.hpp"
 #include "color.hpp"
 
 namespace jessilib {
@@ -114,11 +115,11 @@ public:
 	void set_color_bg(color in_color);
 
 	/** Text */
-	const std::string& string() const;
-	void set_string(std::string_view in_string);
+	const std::u8string& string() const;
+	void set_string(std::u8string_view in_string);
 
 private:
-	std::string m_string;
+	std::u8string m_string;
 	property m_properties{ property::normal };
 	color m_color{};
 	color m_color_bg{};
