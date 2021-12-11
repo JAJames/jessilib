@@ -459,6 +459,22 @@ constexpr void join_append(OutT& out_string, InT&& in_string, ArgsT&&... in_args
 	join_append(out_string, std::forward<ArgsT>(in_args)...);
 }
 
+constexpr void join_mb_append(std::string&){}; // noop
+
+template<typename InT, typename... ArgsT/*,
+	typename std::enable_if_t<!std::is_same_v<typename InT::value_type, char>>* = nullptr*/> // no char, ambiguous meaning
+void join_mb_append(std::string& out_string, InT&& in_string, ArgsT&&... in_args) {
+	// TODO: is this a valid approach? is mbstate fine it discard between appends?
+	if constexpr (std::is_same_v<char32_t, InT>) {
+		out_string += ustring_to_mbstring(std::u32string_view{ &in_string, 1 }).second;
+	}
+	else {
+		out_string += ustring_to_mbstring(in_string).second;
+	}
+
+	join_mb_append(out_string, std::forward<ArgsT>(in_args)...);
+}
+
 } // impl_join
 
 // Join any number of strings of any type
@@ -467,6 +483,13 @@ OutT join(ArgsT&&... args) {
 	OutT result;
 	result.reserve(impl_join::join_sizes(args...));
 	impl_join::join_append<OutT, ArgsT...>(result, std::forward<ArgsT>(args)...);
+	return result;
+}
+
+template<typename... ArgsT>
+std::string join_mbstring(ArgsT&&... args) {
+	std::string result;
+	impl_join::join_mb_append<ArgsT...>(result, std::forward<ArgsT>(args)...);
 	return result;
 }
 

@@ -50,19 +50,6 @@ constexpr bool deserialize_http_query(std::basic_string<CharT>& inout_string) {
 	return apply_shrink_sequence_tree<CharT, http_query_escapes_root_tree<CharT>, std::size(http_query_escapes_root_tree<CharT>)>(inout_string);
 }
 
-// TODO: decide whether to take this approach, where query strings are assumed to represent UTF-8 text data, OR implement
-// such that calling deserialize_http_query will assume the relevant encoding (i.e: calling with char16_t would read in
-// escaped query values as bytes in codepoint char16_t, rather than utf-8 encoding sequence)
-/*template<typename CharT,
-	std::enable_if_t<sizeof(CharT) != 1>* = nullptr>
-bool deserialize_http_query(std::basic_string<CharT>& inout_string) {
-	//TODO: optimize this?
-	std::basic_string<char8_t> u8query_string = string_cast<char8_t>(inout_string);
-	bool result = deserialize_http_query<char8_t>(u8query_string);
-	inout_string = string_cast<CharT>(u8query_string);
-	return result;
-}*/
-
 /**
  * HTML form parser
  */
@@ -79,21 +66,21 @@ struct HTMLFormContext {
 template<typename CharT, typename ContextT, char32_t InCodepointV>
 constexpr syntax_tree_member<CharT, ContextT> make_value_start_pair() {
 	// '='
-	return { InCodepointV, [](ContextT& inout_context, std::basic_string_view<CharT>&) constexpr {
+	return { InCodepointV, [](ContextT& inout_context, std::basic_string_view<CharT>&) constexpr -> size_t {
 		if (inout_context.value_start != nullptr) {
 			// There's already a value pending; this must just be part of the value.
 			inout_context.write_head += encode_codepoint(inout_context.write_head, InCodepointV);
-			return true;
+			return 0;
 		}
 
 		// Start pending_value
 		inout_context.value_start = inout_context.write_head;
-		return true;
+		return 0;
 	} };
 }
 
 template<typename CharT, typename ContextT>
-constexpr bool value_end_action(ContextT& inout_context, std::basic_string_view<CharT>&) {
+constexpr size_t value_end_action(ContextT& inout_context, std::basic_string_view<CharT>&) {
 	const CharT* value_end = inout_context.write_head;
 	const CharT* key_start = inout_context.key_start;
 	const CharT* value_start = inout_context.value_start;
@@ -106,7 +93,7 @@ constexpr bool value_end_action(ContextT& inout_context, std::basic_string_view<
 		// Start reading next key
 		inout_context.key_start = value_end;
 		inout_context.value_start = nullptr;
-		return true;
+		return 0;
 	}
 
 	// This is a valueless key; terminate the key and push it
@@ -115,7 +102,7 @@ constexpr bool value_end_action(ContextT& inout_context, std::basic_string_view<
 
 	// Start reading next key
 	inout_context.key_start = value_end;
-	return true;
+	return 0;
 }
 
 template<typename CharT, typename ContextT, char32_t InCodepointV>
@@ -126,8 +113,12 @@ constexpr syntax_tree_member<CharT, ContextT> make_value_end_pair() {
 
 template<typename CharT, typename ContextT, char32_t InCodepointV, size_t MaxDigitsV, bool ExactDigitsV, bool IsUnicode>
 constexpr syntax_tree_member<CharT, ContextT> make_hex_syntax_shrink_pair() {
-	return { InCodepointV, [](ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view) constexpr {
-		return hex_shrink_sequence_action<CharT, MaxDigitsV, ExactDigitsV, IsUnicode>(inout_context.write_head, inout_read_view);
+	return { InCodepointV, [](ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view) constexpr -> size_t {
+		if (hex_shrink_sequence_action<CharT, MaxDigitsV, ExactDigitsV, IsUnicode>(inout_context.write_head, inout_read_view)) {
+			return 0;
+		}
+
+		return std::numeric_limits<size_t>::max();
 	} };
 }
 
@@ -135,16 +126,16 @@ template<typename CharT, typename ContextT, char32_t InCodepointV, char8_t OutCo
 constexpr syntax_tree_member<CharT, ContextT> make_simple_shrink_pair() {
 	return {
 		InCodepointV,
-		[](ContextT& inout_context, std::basic_string_view<CharT>&) constexpr {
+		[](ContextT& inout_context, std::basic_string_view<CharT>&) constexpr -> size_t {
 			*inout_context.write_head = static_cast<CharT>(OutCodepointV);
 			++inout_context.write_head;
-			return true;
+			return 0;
 		}
 	};
 }
 
 template<typename CharT, typename ContextT>
-bool html_form_default_action(decode_result decode, ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view) {
+size_t html_form_default_action(decode_result decode, ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view) {
 	// A regular character; copy it and advance the read/write heads
 	CharT*& write_head = inout_context.write_head;
 	CharT* write_end = write_head + decode.units;
@@ -154,7 +145,7 @@ bool html_form_default_action(decode_result decode, ContextT& inout_context, std
 		inout_read_view.remove_prefix(1);
 	}
 
-	return true;
+	return 0;
 }
 
 template<typename CharT, typename ContainerT,

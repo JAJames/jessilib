@@ -34,10 +34,10 @@ namespace jessilib {
  */
 
 template<typename CharT, typename ContextT>
-using syntax_tree_action = bool(*)(ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view);
+using syntax_tree_action = size_t(*)(ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view);
 
 template<typename CharT, typename ContextT>
-using default_syntax_tree_action = bool(*)(decode_result in_codepoint, ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view);
+using default_syntax_tree_action = size_t(*)(decode_result in_codepoint, ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view);
 
 template<typename CharT, typename ContextT>
 using syntax_tree = const std::pair<char32_t, syntax_tree_action<CharT, ContextT>>[];
@@ -72,35 +72,60 @@ constexpr bool is_sorted() {
 	return true;
 }
 
-template<typename CharT, typename ContextT>
-bool fail_action(decode_result, ContextT&, std::basic_string_view<CharT>&) {
-	return false;
+template<typename CharT, typename ContextT, bool UseExceptionsV = false>
+size_t fail_action(decode_result, ContextT&, std::basic_string_view<CharT>& in_read_view) {
+	using namespace std::literals;
+	if constexpr (UseExceptionsV) {
+		std::string exception = "Invalid parse data; unexpected token: '"s;
+		jessilib::encode_codepoint(exception, in_read_view.front());
+		exception += "' when parsing data";
+		throw std::invalid_argument{ exception };
+	}
+	return std::numeric_limits<size_t>::max();
 }
 
 template<typename CharT, typename ContextT>
-bool noop_action(decode_result decode, ContextT&, std::basic_string_view<CharT>& inout_read_view) {
+size_t noop_action(decode_result decode, ContextT&, std::basic_string_view<CharT>& inout_read_view) {
 	inout_read_view.remove_prefix(decode.units);
-	return true;
+	return 0;
 }
 
-template<typename CharT, typename ContextT, char32_t InCodepointV, const syntax_tree<CharT, ContextT> SubTreeBegin, size_t SubTreeSize, default_syntax_tree_action<CharT, ContextT> DefaultActionF = fail_action<CharT, ContextT>>
-constexpr syntax_tree_member<CharT, ContextT> make_tree_pair() {
-	return { InCodepointV, [](ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view) constexpr {
-		auto decode = decode_codepoint(inout_read_view);
-		if (decode.units == 0) {
-			return false;
-		}
-
-		constexpr syntax_tree_member<CharT, ContextT>* SubTreeEnd = SubTreeBegin + SubTreeSize;
-		auto parser = std::lower_bound(SubTreeBegin, SubTreeEnd, decode.codepoint, &syntax_tree_member_compare<CharT>);
+template<typename CharT, typename ContextT, const syntax_tree<CharT, ContextT> SubTreeBegin, size_t SubTreeSize, default_syntax_tree_action<CharT, ContextT> DefaultActionF>
+constexpr size_t tree_action(ContextT& inout_context, std::basic_string_view<CharT>& inout_read_view) {
+	decode_result decode;
+	size_t break_stack_depth;
+	constexpr syntax_tree_member<CharT, ContextT>* SubTreeEnd = SubTreeBegin + SubTreeSize;
+	while ((decode = decode_codepoint(inout_read_view)).units != 0) {
+		auto parser = std::lower_bound(SubTreeBegin, SubTreeEnd, decode.codepoint, &syntax_tree_member_compare<CharT, ContextT>);
 		if (parser == SubTreeEnd || parser->first != decode.codepoint) {
-			return DefaultActionF(decode, inout_context, inout_read_view);
+			break_stack_depth = DefaultActionF(decode, inout_context, inout_read_view);
+			if (break_stack_depth == 0) {
+				// Don't jump the stack; continue
+				continue;
+			}
+
+			return break_stack_depth - 1;
 		}
 
 		// This is a parsed sequence; pass it to the parser
 		inout_read_view.remove_prefix(decode.units);
-		return (parser->second)(inout_context, inout_read_view);
-	} };
+		break_stack_depth = (parser->second)(inout_context, inout_read_view);
+		if (break_stack_depth != 0) {
+			return break_stack_depth - 1;
+		}
+	}
+
+	// decode.units == 0; success if view empty, failure otherwise
+	if (inout_read_view.empty()) {
+		return 0;
+	}
+
+	return std::numeric_limits<size_t>::max();
+}
+
+template<typename CharT, typename ContextT, char32_t InCodepointV, const syntax_tree<CharT, ContextT> SubTreeBegin, size_t SubTreeSize, default_syntax_tree_action<CharT, ContextT> DefaultActionF = fail_action<CharT, ContextT>>
+constexpr syntax_tree_member<CharT, ContextT> make_tree_pair() {
+	return { InCodepointV, tree_action<CharT, ContextT, SubTreeBegin, SubTreeSize, DefaultActionF> };
 }
 
 template<typename CharT, typename ContextT, const syntax_tree<CharT, ContextT> SequenceTreeBegin, size_t SequenceTreeSize,
@@ -111,29 +136,7 @@ constexpr bool apply_syntax_tree(ContextT& inout_context, std::basic_string_view
 		return true;
 	}
 
-	decode_result decode;
-	constexpr auto SubTreeEnd = SequenceTreeBegin + SequenceTreeSize;
-	while ((decode = decode_codepoint(inout_read_view)).units != 0) {
-		auto parser = std::lower_bound(SequenceTreeBegin, SubTreeEnd, decode.codepoint, &syntax_tree_member_compare<CharT, ContextT>);
-		if (parser == SubTreeEnd || parser->first != decode.codepoint) {
-			// Just a normal character; pass it to the default handler
-			if (!DefaultActionF(decode, inout_context, inout_read_view)) {
-				return false;
-			}
-
-			continue;
-		}
-
-		// This is a parsed sequence; pass it to the parser instead
-		inout_read_view.remove_prefix(decode.units);
-		if (!(parser->second)(inout_context, inout_read_view)) {
-			// Bad input received; give up
-			return false;
-		}
-	}
-
-	// We've finished parsing successfully
-	return true;
+	return tree_action<CharT, ContextT, SequenceTreeBegin, SequenceTreeSize, DefaultActionF>(inout_context, inout_read_view) == 0;
 }
 
 } // namespace jessilib

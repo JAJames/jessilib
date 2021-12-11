@@ -67,6 +67,8 @@ private:
 		std::string m_format;
 	};
 
+	parser_manager();
+
 	std::shared_mutex m_mutex;
 	id m_last_id{};
 	std::set<registration> m_registrations; // This set and map could be condensed into a bimap

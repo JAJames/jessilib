@@ -122,6 +122,22 @@ TEST(JsonParser, deserialize_string) {
 	json_parser parser;
 
 	EXPECT_EQ(parser.deserialize(R"json("text")json"sv), u8"text");
+
+	object obj;
+	std::u8string_view u8text = u8R"json("text")json"sv;
+	EXPECT_TRUE(deserialize_json(obj, u8text));
+	EXPECT_EQ(obj, u8"text"sv);
+	EXPECT_TRUE(u8text.empty());
+
+	std::u16string_view u16text = uR"json("text")json"sv;
+	EXPECT_TRUE(deserialize_json(obj, u16text));
+	EXPECT_EQ(obj, u8"text"sv);
+	EXPECT_TRUE(u8text.empty());
+
+	std::u32string_view u32text = UR"json("text")json"sv;
+	EXPECT_TRUE(deserialize_json(obj, u32text));
+	EXPECT_EQ(obj, u8"text"sv);
+	EXPECT_TRUE(u8text.empty());
 }
 
 TEST(JsonParser, deserialize_array) {
@@ -157,7 +173,7 @@ TEST(JsonParser, deserialize_array_nested) {
 				1,2,3,
 				null,
 				"text",
-				[5,6,7],
+				[5,6,7]
 		]		, [ ] , [	" text " ],
 		12.34,
 		0.1234,

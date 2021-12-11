@@ -17,6 +17,7 @@
  */
 
 #include "impl/parser_manager.hpp"
+#include "parsers/json.hpp" // only for default-registration
 #include "parser.hpp"
 #include "assert.hpp"
 
@@ -47,6 +48,11 @@ bool parser_manager::registration::operator<(const registration& rhs) const {
 
 	// One of the registrations lacked an ID; this must be a search by format
 	return m_format < rhs.m_format;
+}
+
+parser_manager::parser_manager() {
+	// Add library-provided default parsers; intentionally delayed until construction rather than self-registration for zero-cost static initialization when unused
+	register_parser(std::make_shared<json_parser>(), "json", false);
 }
 
 parser_manager::id parser_manager::register_parser(std::shared_ptr<parser> in_parser, const std::string& in_format, bool in_force) {
