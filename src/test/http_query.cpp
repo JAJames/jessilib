@@ -29,9 +29,9 @@ constexpr std::u8string query_constexpr(std::u8string_view in_expression) {
 	jessilib::deserialize_http_query(result);
 	return result;
 }
-ASSERT_COMPILES_CONSTEXPR(return query_constexpr("test"s) == "test"s);
-ASSERT_COMPILES_CONSTEXPR(return query_constexpr("first+second"s) == "first second"s);
-ASSERT_COMPILES_CONSTEXPR(return query_constexpr("first%20second"s) == "first second"s);
+ASSERT_COMPILES_CONSTEXPR(return query_constexpr(u8"test"s) == u8"test"s);
+ASSERT_COMPILES_CONSTEXPR(return query_constexpr(u8"first+second"s) == u8"first second"s);
+ASSERT_COMPILES_CONSTEXPR(return query_constexpr(u8"first%20second"s) == u8"first second"s);
 #endif // __cpp_lib_constexpr_string
 
 using char_types = ::testing::Types</*char,*/ char8_t, char16_t, char32_t>;

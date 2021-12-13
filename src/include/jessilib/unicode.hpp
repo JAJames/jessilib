@@ -229,9 +229,9 @@ std::pair<bool, std::string> ustring_to_mbstring(std::basic_string_view<CharT> i
 	while ((decode = decode_codepoint(in_string)).units != 0) {
 		in_string.remove_prefix(decode.units);
 
-		char buffer[MB_CUR_MAX]; // MB_LEN_MAX
+		char buffer[MB_LEN_MAX]; // MB_LEN_MAX is constant, MB_CUR_MAX is not, and C++ doesn't have VLAs
 		size_t bytes_written = std::c32rtomb(buffer, decode.codepoint, &mbstate);
-		if (bytes_written > MB_CUR_MAX) {
+		if (bytes_written > MB_LEN_MAX) {
 			// Invalid codepoint; return
 			result.first = false;
 			return result;
