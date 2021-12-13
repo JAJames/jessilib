@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cuchar>
+#include <climits>
 #include "unicode_compare.hpp"
 
 namespace jessilib {
