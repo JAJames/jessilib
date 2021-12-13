@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "fmt/xchar.h" // fmt::format
 #include "jessilib/parser.hpp"
 #include "jessilib/unicode.hpp" // join
 #include "jessilib/unicode_syntax.hpp" // syntax trees
@@ -29,8 +30,23 @@ namespace jessilib {
 class json_parser : public parser {
 public:
 	/** deserialize/serialize overrides */
-	virtual object deserialize(std::u8string_view in_data) override;
-	virtual std::u8string serialize(const object& in_object) override;
+	object deserialize_bytes(bytes_view_type in_data, encoding in_write_encoding) override;
+	std::string serialize_bytes(const object& in_object, encoding in_write_encoding) override;
+
+	std::u8string serialize_u8(const object& in_object) override { return serialize_impl<char8_t>(in_object); }
+	std::u16string serialize_u16(const object& in_object) override { return serialize_impl<char16_t>(in_object); }
+	std::u32string serialize_u32(const object& in_object) override { return serialize_impl<char32_t>(in_object); }
+	std::wstring serialize_w(const object& in_object) override { return serialize_impl<wchar_t>(in_object); }
+
+	template<typename CharT, typename ResultCharT = CharT>
+	std::basic_string<ResultCharT> serialize_impl(const object& in_object) {
+		std::basic_string<ResultCharT> result;
+		serialize_impl<CharT, ResultCharT>(result, in_object);
+		return result;
+	}
+
+	template<typename CharT, typename ResultCharT = CharT>
+	void serialize_impl(std::basic_string<ResultCharT>& out_string, const object& in_object);
 };
 
 /**
@@ -449,6 +465,167 @@ bool deserialize_json(object& out_object, std::basic_string_view<CharT>& inout_r
 
 	return apply_syntax_tree<CharT, decltype(context), json_object_tree<CharT, UseExceptionsV>, std::size(json_object_tree<CharT, UseExceptionsV>), DefaultActionF>
 		(context, inout_read_view);
+}
+
+template<typename CharT, typename ResultCharT>
+void make_json_string(std::basic_string<ResultCharT>& out_string, std::u8string_view in_string) {
+	using namespace std::literals;
+	out_string.reserve(out_string.size() + in_string.size() + 2);
+	simple_append<CharT, ResultCharT>(out_string, '\"');
+
+	decode_result decode;
+	while ((decode = decode_codepoint(in_string)).units != 0) {
+		if (decode.codepoint == U'\\') { // backslash
+			simple_append<CharT, ResultCharT>(out_string, u8"\\\\"sv);
+		}
+		else if (decode.codepoint == U'\"') { // quotation
+			simple_append<CharT, ResultCharT>(out_string, u8"\\\""sv);
+		}
+		else if (decode.codepoint < 0x20) { // control characters
+			simple_append<CharT, ResultCharT>(out_string, u8"\\u00"sv);
+
+			// overwrite last 2 zeroes with correct hexadecimal sequence
+			char data[2]; // Will only ever use 2 chars
+			char* data_end = data + sizeof(data);
+			auto to_chars_result = std::to_chars(data, data_end, static_cast<uint32_t>(decode.codepoint), 16);
+			if (to_chars_result.ptr == data) {
+				// No bytes written
+				simple_append<CharT, ResultCharT>(out_string, u8"00"sv);
+			}
+			else if (to_chars_result.ptr != data_end) {
+				// 1 byte written
+				simple_append<CharT, ResultCharT>(out_string, '0');
+				simple_append<CharT, ResultCharT>(out_string, data[0]);
+			}
+			else {
+				// 2 bytes written
+				simple_append<CharT, ResultCharT>(out_string, std::u8string_view{ reinterpret_cast<char8_t*>(data), sizeof(data) });
+			}
+		}
+		else {
+			if constexpr (sizeof(CharT) == sizeof(char8_t) && sizeof(CharT) == sizeof(ResultCharT)) {
+				// Valid UTF-8 sequence; copy it over
+				out_string.append(reinterpret_cast<const ResultCharT*>(in_string.data()), decode.units);
+			}
+			else if constexpr (sizeof(CharT) == sizeof(ResultCharT)){
+				// Valid UTF-8 codepoint; append it
+				encode_codepoint(out_string, decode.codepoint);
+			}
+			else {
+				// Valid UTF-8 codepoint; encode & append it
+				encode_buffer_type<CharT> buffer;
+				size_t units_written = encode_codepoint(buffer, decode.codepoint);
+				out_string.append(reinterpret_cast<ResultCharT*>(buffer), units_written * sizeof(CharT));
+			}
+		}
+
+		in_string.remove_prefix(decode.units);
+	}
+
+	simple_append<CharT, ResultCharT>(out_string, '\"');
+}
+
+template<typename CharT>
+static constexpr CharT empty_format_arg[3]{ '{', '}', 0 };
+
+template<typename CharT, typename ResultCharT>
+void json_parser::serialize_impl(std::basic_string<ResultCharT>& out_string, const object& in_object) {
+	using namespace std::literals;
+	static const object::array_type s_null_array;
+	static const object::map_type s_null_map;
+
+	switch (in_object.type()) {
+		case object::type::null:
+			simple_append<CharT, ResultCharT>(out_string, u8"null"sv);
+			return;
+
+		case object::type::boolean:
+			if (in_object.get<bool>()) {
+				simple_append<CharT, ResultCharT>(out_string, u8"true"sv);
+				return;
+			}
+			simple_append<CharT, ResultCharT>(out_string, u8"false"sv);
+			return;
+
+		case object::type::integer:
+			if constexpr (sizeof(CharT) == sizeof(ResultCharT)) {
+				out_string += fmt::format(empty_format_arg<ResultCharT>, in_object.get<intmax_t>());
+			}
+			else if constexpr (std::is_same_v<ResultCharT, char>){
+				auto encoded = fmt::format(empty_format_arg<CharT>, in_object.get<intmax_t>());
+				out_string.append(reinterpret_cast<ResultCharT*>(encoded.data()), encoded.size() * sizeof(CharT));
+			}
+			return;
+
+		case object::type::decimal:
+			if constexpr (sizeof(CharT) == sizeof(ResultCharT)) {
+				out_string += fmt::format(empty_format_arg<ResultCharT>, in_object.get<long double>());
+			}
+			else if constexpr (std::is_same_v<ResultCharT, char>){
+				auto encoded = fmt::format(empty_format_arg<CharT>, in_object.get<long double>());
+				out_string.append(reinterpret_cast<ResultCharT*>(encoded.data()), encoded.size() * sizeof(CharT));
+			}
+			return;
+
+		case object::type::text:
+			make_json_string<CharT, ResultCharT>(out_string, in_object.get<std::u8string>());
+			return;
+
+		case object::type::array: {
+			if (in_object.size() == 0) {
+				simple_append<CharT, ResultCharT>(out_string, u8"[]"sv);
+			}
+
+			simple_append<CharT, ResultCharT>(out_string, '[');
+
+			// Serialize all objects in array
+			for (auto& obj : in_object.get<object::array_type>(s_null_array)) {
+				json_parser::serialize_impl<CharT, ResultCharT>(out_string, obj);
+				simple_append<CharT, ResultCharT>(out_string, ',');
+			}
+
+			// Replace last comma with ']'
+			if constexpr (sizeof(CharT) == sizeof(ResultCharT)) {
+				out_string.back() = ']';
+			}
+			else if constexpr (std::is_same_v<ResultCharT, char>) {
+				out_string.erase(out_string.size() - sizeof(CharT));
+				simple_append<CharT, ResultCharT>(out_string, ']');
+			}
+			// else // not supported
+			return;
+		}
+
+		case object::type::map: {
+			if (in_object.size() == 0) {
+				simple_append<CharT, ResultCharT>(out_string, u8"{}"sv);
+			}
+
+			simple_append<CharT, ResultCharT>(out_string, '{');
+
+			// Serialize all objects in map
+			for (auto& item : in_object.get<object::map_type>(s_null_map)) {
+				make_json_string<CharT, ResultCharT>(out_string, item.first);
+				simple_append<CharT, ResultCharT>(out_string, ':');
+				json_parser::serialize_impl<CharT, ResultCharT>(out_string, item.second);
+				simple_append<CharT, ResultCharT>(out_string, ',');
+			}
+
+			// Replace last comma with '}'
+			if constexpr (sizeof(CharT) == sizeof(ResultCharT)) {
+				out_string.back() = '}';
+			}
+			else if constexpr (std::is_same_v<ResultCharT, char>) {
+				out_string.erase(out_string.size() - sizeof(CharT));
+				simple_append<CharT, ResultCharT>(out_string, '}');
+			}
+			// else // not supported
+			return;
+		}
+
+		default:
+			throw std::invalid_argument{ "Invalid data type: " + std::to_string(static_cast<size_t>(in_object.type())) };
+	}
 }
 
 } // namespace jessilib

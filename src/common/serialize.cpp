@@ -54,16 +54,16 @@ object deserialize_object(std::u8string_view in_data, const std::string& in_form
 }
 
 object deserialize_object(std::istream& in_stream, const std::string& in_format) {
-	return get_parser(in_format)->deserialize(in_stream);
+	return get_parser(in_format)->deserialize_bytes(in_stream, encoding::utf_8);
 }
 
 /** Serialization */
 std::u8string serialize_object(const object& in_object, const std::string& in_format) {
-	return get_parser(in_format)->serialize(in_object);
+	return get_parser(in_format)->serialize<char8_t>(in_object);
 }
 
 void serialize_object(std::ostream& in_stream, const object& in_object, const std::string& in_format) {
-	get_parser(in_format)->serialize(in_stream, in_object);
+	get_parser(in_format)->serialize_bytes(in_stream, in_object, encoding::utf_8);
 }
 
 } // namespace jessilib

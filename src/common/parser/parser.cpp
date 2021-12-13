@@ -22,8 +22,8 @@
 
 namespace jessilib {
 
-object parser::deserialize(std::istream& in_stream) {
-	std::vector<char8_t> data;
+object parser::deserialize_bytes(std::istream& in_stream, encoding in_read_encoding) {
+	std::vector<byte_type> data;
 
 	// Read entire stream into data
 	char buffer[1024];
@@ -33,12 +33,13 @@ object parser::deserialize(std::istream& in_stream) {
 	}
 
 	// Pass data to deserialize
-	return deserialize(std::u8string_view{ &data.front(), data.size() });
+	return deserialize_bytes(bytes_view_type{ &data.front(), data.size() }, in_read_encoding);
 }
 
-void parser::serialize(std::ostream& in_stream, const object& in_object) {
+void parser::serialize_bytes(std::ostream& in_stream, const object& in_object, encoding in_write_encoding) {
 	// TODO: replace this method
-	in_stream << jessilib::string_view_cast<char>(serialize(in_object));
+	auto bytes = serialize_bytes(in_object, in_write_encoding);
+	in_stream << bytes;
 }
 
 } // namespace jessilib

@@ -169,6 +169,67 @@ struct unicode_traits<wchar_t> : std::true_type {
 template<typename CharT>
 using encode_buffer_type = CharT[unicode_traits<CharT>::max_units_per_codepoint];
 
+// enum representing the character encodings I intend to support
+enum class encoding {
+	utf_8, // The most common and arguably superior encoding for files and networking protocols not in straight ASCII
+	utf_16,
+	utf_32,
+	wchar, // essentially only really for std::wcout / std::wcout
+	multibyte // essentially only really for std::cout / std::cin
+};
+
+template<encoding EncodingV>
+struct encoding_info;
+
+template<>
+struct encoding_info<encoding::utf_8> {
+	using data_type = char8_t;
+	static constexpr encoding text_encoding = encoding::utf_8;
+};
+
+template<>
+struct encoding_info<encoding::utf_16> {
+	using data_type = char16_t;
+	static constexpr encoding text_encoding = encoding::utf_16;
+};
+
+template<>
+struct encoding_info<encoding::utf_32> {
+	using data_type = char32_t;
+	static constexpr encoding text_encoding = encoding::utf_32;
+};
+
+template<>
+struct encoding_info<encoding::wchar> {
+	using data_type = wchar_t;
+	static constexpr encoding text_encoding = encoding::wchar;
+};
+
+template<>
+struct encoding_info<encoding::multibyte> {
+	using data_type = char;
+	static constexpr encoding text_encoding = encoding::multibyte;
+};
+
+template<typename CharT>
+struct default_encoding_info;
+
+template<>
+struct default_encoding_info<char8_t> : public encoding_info<encoding::utf_8> {
+};
+
+template<>
+struct default_encoding_info<char16_t> : public encoding_info<encoding::utf_16> {
+};
+
+template<>
+struct default_encoding_info<char32_t> : public encoding_info<encoding::utf_32> {
+};
+
+template<>
+struct default_encoding_info<wchar_t> : public encoding_info<encoding::wchar> {
+};
+
 /** single-unit helper utilities */
 char32_t fold(char32_t in_codepoint); // Folds codepoint for case-insensitive checks (not for human output)
 constexpr int as_base(char32_t in_character, unsigned int base); // The value represented by in_character in terms of base if valid, -1 otherwise
