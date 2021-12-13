@@ -29,13 +29,13 @@ public:
 };
 
 /** Deserialization */
-object deserialize_object(const std::string& in_data, const std::string& in_format);
-object deserialize_object(const std::vector<char>& in_data, const std::string& in_format);
-object deserialize_object(std::string_view in_data, const std::string& in_format);
+object deserialize_object(const std::u8string& in_data, const std::string& in_format);
+object deserialize_object(const std::vector<char8_t>& in_data, const std::string& in_format);
+object deserialize_object(std::u8string_view in_data, const std::string& in_format);
 object deserialize_object(std::istream& in_stream, const std::string& in_format);
 
 /** Serialization */
-std::string serialize_object(const object& in_object, const std::string& in_format);
+std::u8string serialize_object(const object& in_object, const std::string& in_format);
 void serialize_object(std::ostream& in_stream, const object& in_object, const std::string& in_format);
 
 } // namespace jessilib

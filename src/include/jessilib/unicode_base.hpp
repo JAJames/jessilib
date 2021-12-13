@@ -70,7 +70,7 @@ constexpr size_t encode_codepoint(CharT* out_buffer, char32_t in_codepoint);
 std::u8string encode_codepoint_u8(char32_t in_codepoint);
 std::u16string encode_codepoint_u16(char32_t in_codepoint);
 std::u32string encode_codepoint_u32(char32_t in_codepoint);
-std::wstring encode_codepoint_w(char32_t in_codepoint); // ASSUMES UTF-16 OR UTF-32
+std::wstring encode_codepoint_w(char32_t in_codepoint); // ASSUMES UTF-16 OR UTF-32W
 
 /** decode_codepoint */
 
@@ -130,15 +130,21 @@ constexpr decode_result decode_surrogate_pair(char16_t in_high_surrogate, char16
 template<typename CharT>
 struct unicode_traits : std::false_type {};
 
+#ifdef JESSILIB_CHAR_AS_UTF8
 template<>
 struct unicode_traits<char> : std::true_type {
 	using equivalent_type = char8_t; // DEPRECATE
 	static constexpr size_t max_units_per_codepoint = 4;
 };
+#endif // JESSILIB_CHAR_AS_UTF8
 
 template<>
 struct unicode_traits<char8_t> : std::true_type {
-	using equivalent_type = char; // DEPRECATE
+#ifdef JESSILIB_CHAR_AS_UTF8
+	using equivalent_type = char;
+#else // JESSILIB_CHAR_AS_UTF8
+	using equivalent_type = char8_t;
+#endif // JESSILIB_CHAR_AS_UTF8
 	static constexpr size_t max_units_per_codepoint = 4;
 };
 
@@ -338,9 +344,11 @@ constexpr size_t encode_codepoint_utf(T& out_destination, char32_t in_codepoint)
 	else if constexpr (std::is_same_v<CharT, wchar_t>) {
 		return encode_codepoint_w<T>(out_destination, in_codepoint);
 	}
+#ifdef JESSILIB_CHAR_AS_UTF8
 	else if constexpr (std::is_same_v<CharT, char>) {
 		return encode_codepoint_utf8<CharT, T>(out_destination, in_codepoint);
 	}
+#endif // JESSILIB_CHAR_AS_UTF8
 }
 
 template<typename CharT>
@@ -476,9 +484,11 @@ constexpr decode_result decode_codepoint(std::basic_string_view<CharT> in_string
 			return decode_codepoint_utf32<wchar_t>(in_string);
 		}
 	}
+#ifdef JESSILIB_CHAR_AS_UTF8
 	else if constexpr (std::is_same_v<CharT, char>) {
 		return decode_codepoint_utf8(in_string);
 	}
+#endif // JESSILIB_CHAR_AS_UTF8
 }
 
 template<typename CharT>

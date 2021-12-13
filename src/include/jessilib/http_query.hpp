@@ -166,7 +166,7 @@ constexpr bool deserialize_html_form(ContainerT& out_container, std::basic_strin
 
 	HTMLFormContext<CharT, ContainerT> context{ out_container, inout_string.data() };
 	constexpr auto& html_form_tree = html_form_root_tree<CharT, ContainerT>;
-	static_assert(is_sorted<char, decltype(context), html_form_tree, std::size(html_form_tree)>(), "Tree must be pre-sorted");
+	static_assert(is_sorted<CharT, decltype(context), html_form_tree, std::size(html_form_tree)>(), "Tree must be pre-sorted");
 
 	std::basic_string_view<CharT> read_view{ inout_string };
 	if (apply_syntax_tree<CharT, decltype(context), html_form_tree, std::size(html_form_tree), html_form_default_action>

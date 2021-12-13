@@ -29,8 +29,8 @@ namespace jessilib {
 class json_parser : public parser {
 public:
 	/** deserialize/serialize overrides */
-	virtual object deserialize(std::string_view in_data) override;
-	virtual std::string serialize(const object& in_object) override;
+	virtual object deserialize(std::u8string_view in_data) override;
+	virtual std::u8string serialize(const object& in_object) override;
 };
 
 /**
@@ -101,7 +101,9 @@ constexpr syntax_tree_member<CharT, ContextT> make_keyword_value_pair() {
 		// Unexpected character; throw if appropriate
 		if constexpr (ContextT::use_exceptions) {
 			using namespace std::literals;
-			throw std::invalid_argument{ jessilib::join<std::string>("Invalid JSON data; unexpected token: '"sv, inout_read_view, "' when parsing null"sv) };
+			throw std::invalid_argument{ jessilib::join_mbstring(u8"Invalid JSON data; unexpected token: '"sv,
+				inout_read_view,
+				u8"' when parsing null"sv) };
 		}
 
 		return std::numeric_limits<size_t>::max();
@@ -164,7 +166,8 @@ size_t string_start_action(ContextT& inout_context, std::basic_string_view<CharT
 		if constexpr (ContextT::use_exceptions) {
 			using namespace std::literals;
 			throw std::invalid_argument {
-				jessilib::join_mbstring("Invalid JSON data; invalid token or end of string: "sv, std::u8string_view{ string_data })
+				jessilib::join_mbstring(u8"Invalid JSON data; invalid token or end of string: "sv,
+					std::u8string_view{ string_data })
 			};
 		}
 
@@ -239,7 +242,9 @@ size_t array_start_action(ContextT& inout_context, std::basic_string_view<CharT>
 			// Invalid JSON!
 			if constexpr (ContextT::use_exceptions) {
 				using namespace std::literals;
-				throw std::invalid_argument{ jessilib::join_mbstring("Invalid JSON data: expected ',' or ']', instead encountered: "sv, inout_read_view) };
+				throw std::invalid_argument{ jessilib::join_mbstring(
+					u8"Invalid JSON data: expected ',' or ']', instead encountered: "sv,
+					inout_read_view) };
 			}
 
 			return std::numeric_limits<size_t>::max();
@@ -285,9 +290,10 @@ size_t make_map_start_action(ContextT& inout_context, std::basic_string_view<Cha
 		// Assert that we've reached the start of a key
 		if (front != '\"') {
 			if constexpr (ContextT::use_exceptions) {
-				throw std::invalid_argument{ jessilib::join_mbstring("Invalid JSON data; unexpected token: '"sv,
+				throw std::invalid_argument{
+					jessilib::join_mbstring(u8"Invalid JSON data; unexpected token: '"sv,
 					decode_codepoint(inout_read_view).codepoint,
-					"' when parsing object map (expected '\"' instead)"sv) };
+					u8"' when parsing object map (expected '\"' instead)"sv) };
 			}
 
 			return std::numeric_limits<size_t>::max();
@@ -312,9 +318,10 @@ size_t make_map_start_action(ContextT& inout_context, std::basic_string_view<Cha
 		}
 		front = inout_read_view.front();
 		if (front != ':') {
-			throw std::invalid_argument{ jessilib::join_mbstring("Invalid JSON data; unexpected token: '"sv,
+			throw std::invalid_argument{
+				jessilib::join_mbstring(u8"Invalid JSON data; unexpected token: '"sv,
 				decode_codepoint(inout_read_view).codepoint,
-				"' when parsing map key (expected ':' instead)"sv) };
+				u8"' when parsing map key (expected ':' instead)"sv) };
 		}
 		inout_read_view.remove_prefix(1); // strip ':'
 

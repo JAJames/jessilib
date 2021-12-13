@@ -34,13 +34,20 @@ ASSERT_COMPILES_CONSTEXPR(return cpp_constexpr("test"s) == "test"s);
 ASSERT_COMPILES_CONSTEXPR(return cpp_constexpr("\\r\\n"s) == "\r\n"s);
 #endif // __cpp_lib_constexpr_string
 
+#ifdef JESSILIB_CHAR_AS_UTF8
 using char_types = ::testing::Types<char, char8_t, char16_t, char32_t>;
-using utf8_char_types = ::testing::Types<char, char8_t>;
 using char_type_combos = ::testing::Types<
 	std::pair<char, char>, std::pair<char, char8_t>, std::pair<char, char16_t>, std::pair<char, char32_t>,
 	std::pair<char8_t, char>, std::pair<char8_t, char8_t>, std::pair<char8_t, char16_t>, std::pair<char8_t, char32_t>,
 	std::pair<char16_t, char>, std::pair<char16_t, char8_t>, std::pair<char16_t, char16_t>, std::pair<char16_t, char32_t>,
 	std::pair<char32_t, char>, std::pair<char32_t, char8_t>, std::pair<char32_t, char16_t>, std::pair<char32_t, char32_t>>;
+#else // JESSILIB_CHAR_AS_UTF8
+using char_types = ::testing::Types<char8_t, char16_t, char32_t>;
+using char_type_combos = ::testing::Types<
+	std::pair<char8_t, char8_t>, std::pair<char8_t, char16_t>, std::pair<char8_t, char32_t>,
+	std::pair<char16_t, char8_t>, std::pair<char16_t, char16_t>, std::pair<char16_t, char32_t>,
+	std::pair<char32_t, char8_t>, std::pair<char32_t, char16_t>, std::pair<char32_t, char32_t>>;
+#endif // JESSILIB_CHAR_AS_UTF8
 
 template<typename T>
 class UnicodeSequenceTest : public ::testing::Test {
@@ -51,8 +58,8 @@ TYPED_TEST_SUITE(UnicodeSequenceTest, char_types);
 constexpr char32_t MAX_LOOP_CODEPOINT = 0x100FF; // use 0x10FFFF for full testing
 
 #define TEST_CPP_SEQUENCE(expr) \
-	{ auto parsed_string = jessilib::string_cast<TypeParam>(#expr); \
-    auto normal_string = jessilib::string_cast<TypeParam>(expr); \
+	{ auto parsed_string = jessilib::string_cast<TypeParam>(reinterpret_cast<const char8_t*>(#expr)); \
+    auto normal_string = jessilib::string_cast<TypeParam>(reinterpret_cast<const char8_t*>(expr)); \
 	parsed_string = parsed_string.substr(1, parsed_string.size() - 2); \
 	jessilib::apply_cpp_escape_sequences(parsed_string); \
 	EXPECT_EQ(parsed_string, normal_string); }
@@ -130,7 +137,7 @@ TYPED_TEST(UnicodeSequenceTest, cpp_hex) {
 		for (unsigned int codepoint = 0; codepoint <= 0xFF; ++codepoint) {
 			std::basic_string<TypeParam> parsed_string;
 			for (size_t min_length = 0; min_length <= 2; ++min_length) {
-				parsed_string = jessilib::string_cast<TypeParam>("\\x");
+				parsed_string = jessilib::string_cast<TypeParam>(u8"\\x");
 				parsed_string += make_hex_string<TypeParam>(codepoint, min_length);
 				jessilib::apply_cpp_escape_sequences(parsed_string);
 				EXPECT_EQ(parsed_string.front(), static_cast<TypeParam>(codepoint));
@@ -145,7 +152,7 @@ TYPED_TEST(UnicodeSequenceTest, cpp_hex) {
 			std::basic_string<TypeParam> parsed_string;
 			for (size_t min_length = 0; min_length <= 4; ++min_length) {
 				// "\x0" -> "\xffff"
-				parsed_string = jessilib::string_cast<TypeParam>("\\x");
+				parsed_string = jessilib::string_cast<TypeParam>(u8"\\x");
 				parsed_string += make_hex_string<TypeParam>(codepoint, min_length);
 				jessilib::apply_cpp_escape_sequences(parsed_string);
 				EXPECT_EQ(parsed_string.front(), static_cast<TypeParam>(codepoint));
@@ -161,7 +168,7 @@ TYPED_TEST(UnicodeSequenceTest, cpp_hex) {
 			std::basic_string<TypeParam> parsed_string;
 			for (size_t min_length = 0; min_length <= 8; ++min_length) {
 				// "\x0" -> "\x0010ffff"
-				parsed_string = jessilib::string_cast<TypeParam>("\\x");
+				parsed_string = jessilib::string_cast<TypeParam>(u8"\\x");
 				parsed_string += make_hex_string<TypeParam>(codepoint, min_length);
 				jessilib::apply_cpp_escape_sequences(parsed_string);
 				EXPECT_EQ(parsed_string.front(), static_cast<TypeParam>(codepoint));
@@ -175,7 +182,7 @@ TYPED_TEST(UnicodeSequenceTest, cpp_hex) {
 TYPED_TEST(UnicodeSequenceTest, cpp_u16) {
 	// "u0000" -> "uffff" with & without leading zeroes
 	for (unsigned int codepoint = 0; codepoint <= 0xFFFF; ++codepoint) {
-		std::basic_string<TypeParam> parsed_string = jessilib::string_cast<TypeParam>("\\u");
+		std::basic_string<TypeParam> parsed_string = jessilib::string_cast<TypeParam>(u8"\\u");
 		parsed_string += make_hex_string<TypeParam>(codepoint, 4);
 		jessilib::apply_cpp_escape_sequences(parsed_string);
 
@@ -188,7 +195,7 @@ TYPED_TEST(UnicodeSequenceTest, cpp_u16) {
 TYPED_TEST(UnicodeSequenceTest, cpp_u32) {
 	// "U00000000" -> "U000100FF" with & without leading zeroes
 	for (unsigned int codepoint = 0; codepoint <= MAX_LOOP_CODEPOINT; ++codepoint) {
-		std::basic_string<TypeParam> parsed_string = jessilib::string_cast<TypeParam>("\\U");
+		std::basic_string<TypeParam> parsed_string = jessilib::string_cast<TypeParam>(u8"\\U");
 		parsed_string += make_hex_string<TypeParam>(codepoint, 8);
 		jessilib::apply_cpp_escape_sequences(parsed_string);
 

@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "unicode_base.hpp"
+#include "unicode.hpp"
 
 namespace jessilib {
 
@@ -76,10 +76,9 @@ template<typename CharT, typename ContextT, bool UseExceptionsV = false>
 size_t fail_action(decode_result, ContextT&, std::basic_string_view<CharT>& in_read_view) {
 	using namespace std::literals;
 	if constexpr (UseExceptionsV) {
-		std::string exception = "Invalid parse data; unexpected token: '"s;
-		jessilib::encode_codepoint(exception, in_read_view.front());
-		exception += "' when parsing data";
-		throw std::invalid_argument{ exception };
+		throw std::invalid_argument{ jessilib::join_mbstring(u8"Invalid parse data; unexpected token: '"sv,
+			jessilib::decode_codepoint(in_read_view).codepoint,
+			u8"' when parsing data"sv) };
 	}
 	return std::numeric_limits<size_t>::max();
 }

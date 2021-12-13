@@ -22,10 +22,10 @@
 
 using namespace std::literals;
 
-// Compile-time tests for constexpr on compilers which support C++20 constexpr std::string
+// Compile-time tests for constexpr on compilers which support C++20 constexpr std::u8string
 #if defined(__cpp_lib_constexpr_string) && (__GNUC__ >= 12 || _MSC_VER >= 1929)
-constexpr std::string query_constexpr(std::string_view in_expression) {
-	std::string result{ static_cast<std::string>(in_expression) };
+constexpr std::u8string query_constexpr(std::u8string_view in_expression) {
+	std::u8string result{ static_cast<std::u8string>(in_expression) };
 	jessilib::deserialize_http_query(result);
 	return result;
 }
@@ -34,8 +34,8 @@ ASSERT_COMPILES_CONSTEXPR(return query_constexpr("first+second"s) == "first seco
 ASSERT_COMPILES_CONSTEXPR(return query_constexpr("first%20second"s) == "first second"s);
 #endif // __cpp_lib_constexpr_string
 
-using char_types = ::testing::Types<char, char8_t, char16_t, char32_t>;
-using utf8_char_types = ::testing::Types<char, char8_t>;
+using char_types = ::testing::Types</*char,*/ char8_t, char16_t, char32_t>;
+using utf8_char_types = ::testing::Types</*char,*/ char8_t>;
 
 template<typename T>
 class QuerySequenceTest : public ::testing::Test {
@@ -162,77 +162,77 @@ TYPED_TEST(QuerySequenceTest, invalids_2len_trailing) {
 }
 
 TEST(HtmlFormParser, empty) {
-	std::vector<std::pair<std::string_view, std::string_view>> parsed_result;
-	std::string query_text;
+	std::vector<std::pair<std::u8string_view, std::u8string_view>> parsed_result;
+	std::u8string query_text;
 	EXPECT_TRUE(jessilib::deserialize_html_form(parsed_result, query_text));
 	EXPECT_TRUE(query_text.empty());
 	EXPECT_TRUE(parsed_result.empty());
 }
 
 TEST(HtmlFormParser, one_key) {
-	std::vector<std::pair<std::string_view, std::string_view>> parsed_result;
-	std::string query_text = "key";
+	std::vector<std::pair<std::u8string_view, std::u8string_view>> parsed_result;
+	std::u8string query_text = u8"key";
 	EXPECT_TRUE(jessilib::deserialize_html_form(parsed_result, query_text));
-	EXPECT_EQ(query_text, "key");
+	EXPECT_EQ(query_text, u8"key");
 	EXPECT_EQ(parsed_result.size(), 1);
 	EXPECT_EQ(parsed_result[0].first, query_text);
 	EXPECT_TRUE(parsed_result[0].second.empty());
 }
 
 TEST(HtmlFormParser, one_key_and_value) {
-	std::vector<std::pair<std::string_view, std::string_view>> parsed_result;
-	std::string query_text = "key=value";
+	std::vector<std::pair<std::u8string_view, std::u8string_view>> parsed_result;
+	std::u8string query_text = u8"key=value";
 	EXPECT_TRUE(jessilib::deserialize_html_form(parsed_result, query_text));
-	EXPECT_TRUE(query_text.starts_with("keyvalue"));
+	EXPECT_TRUE(query_text.starts_with(u8"keyvalue"));
 	EXPECT_EQ(parsed_result.size(), 1);
-	EXPECT_EQ(parsed_result[0].first, "key");
-	EXPECT_EQ(parsed_result[0].second, "value");
+	EXPECT_EQ(parsed_result[0].first, u8"key");
+	EXPECT_EQ(parsed_result[0].second, u8"value");
 }
 
 TEST(HtmlFormParser, one_key_and_value_trailing) {
-	std::vector<std::pair<std::string_view, std::string_view>> parsed_result;
-	std::string query_text = "key=value&";
+	std::vector<std::pair<std::u8string_view, std::u8string_view>> parsed_result;
+	std::u8string query_text = u8"key=value&";
 	EXPECT_TRUE(jessilib::deserialize_html_form(parsed_result, query_text));
-	EXPECT_TRUE(query_text.starts_with("keyvalue"));
+	EXPECT_TRUE(query_text.starts_with(u8"keyvalue"));
 	EXPECT_EQ(parsed_result.size(), 2);
-	EXPECT_EQ(parsed_result[0].first, "key");
-	EXPECT_EQ(parsed_result[0].second, "value");
+	EXPECT_EQ(parsed_result[0].first, u8"key");
+	EXPECT_EQ(parsed_result[0].second, u8"value");
 	EXPECT_TRUE(parsed_result[1].first.empty());
 	EXPECT_TRUE(parsed_result[1].second.empty());
 }
 
 TEST(HtmlFormParser, two_key_one_value) {
-	std::vector<std::pair<std::string_view, std::string_view>> parsed_result;
-	std::string query_text = "key=value&second_key";
+	std::vector<std::pair<std::u8string_view, std::u8string_view>> parsed_result;
+	std::u8string query_text = u8"key=value&second_key";
 	EXPECT_TRUE(jessilib::deserialize_html_form(parsed_result, query_text));
-	EXPECT_TRUE(query_text.starts_with("keyvaluesecond_key"));
+	EXPECT_TRUE(query_text.starts_with(u8"keyvaluesecond_key"));
 	EXPECT_EQ(parsed_result.size(), 2);
-	EXPECT_EQ(parsed_result[0].first, "key");
-	EXPECT_EQ(parsed_result[0].second, "value");
-	EXPECT_EQ(parsed_result[1].first, "second_key");
+	EXPECT_EQ(parsed_result[0].first, u8"key");
+	EXPECT_EQ(parsed_result[0].second, u8"value");
+	EXPECT_EQ(parsed_result[1].first, u8"second_key");
 	EXPECT_TRUE(parsed_result[1].second.empty());
 }
 
 TEST(HtmlFormParser, two_key_two_value) {
-	std::vector<std::pair<std::string_view, std::string_view>> parsed_result;
-	std::string query_text = "key=value&second_key=second=value";
+	std::vector<std::pair<std::u8string_view, std::u8string_view>> parsed_result;
+	std::u8string query_text = u8"key=value&second_key=second=value";
 	EXPECT_TRUE(jessilib::deserialize_html_form(parsed_result, query_text));
-	EXPECT_TRUE(query_text.starts_with("keyvaluesecond_keysecond=value"));
+	EXPECT_TRUE(query_text.starts_with(u8"keyvaluesecond_keysecond=value"));
 	EXPECT_EQ(parsed_result.size(), 2);
-	EXPECT_EQ(parsed_result[0].first, "key");
-	EXPECT_EQ(parsed_result[0].second, "value");
-	EXPECT_EQ(parsed_result[1].first, "second_key");
-	EXPECT_EQ(parsed_result[1].second, "second=value");
+	EXPECT_EQ(parsed_result[0].first, u8"key");
+	EXPECT_EQ(parsed_result[0].second, u8"value");
+	EXPECT_EQ(parsed_result[1].first, u8"second_key");
+	EXPECT_EQ(parsed_result[1].second, u8"second=value");
 }
 
 TEST(HtmlFormParser, some_sequences) {
-	std::vector<std::pair<std::string_view, std::string_view>> parsed_result;
-	std::string query_text = "k+y=va+u%20&%73econd%5Fke%79=second_valu%65";
+	std::vector<std::pair<std::u8string_view, std::u8string_view>> parsed_result;
+	std::u8string query_text = u8"k+y=va+u%20&%73econd%5Fke%79=second_valu%65";
 	EXPECT_TRUE(jessilib::deserialize_html_form(parsed_result, query_text));
-	EXPECT_TRUE(query_text.starts_with("k yva u second_keysecond_value"));
+	EXPECT_TRUE(query_text.starts_with(u8"k yva u second_keysecond_value"));
 	EXPECT_EQ(parsed_result.size(), 2);
-	EXPECT_EQ(parsed_result[0].first, "k y");
-	EXPECT_EQ(parsed_result[0].second, "va u ");
-	EXPECT_EQ(parsed_result[1].first, "second_key");
-	EXPECT_EQ(parsed_result[1].second, "second_value");
+	EXPECT_EQ(parsed_result[0].first, u8"k y");
+	EXPECT_EQ(parsed_result[0].second, u8"va u ");
+	EXPECT_EQ(parsed_result[1].first, u8"second_key");
+	EXPECT_EQ(parsed_result[1].second, u8"second_value");
 }

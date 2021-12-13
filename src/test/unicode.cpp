@@ -128,12 +128,18 @@ TEST(UTF32Test, decode_codepoint) {
 	DECODE_CODEPOINT_TEST(U"\U0001F604"sv, U'\U0001F604', 1U);
 }
 
-using char_types = ::testing::Types<char, char8_t, char16_t, char32_t>;
+#ifdef JESSILIB_CHAR_AS_UTF8
 using char_type_combos = ::testing::Types<
 	std::pair<char, char>, std::pair<char, char8_t>, std::pair<char, char16_t>, std::pair<char, char32_t>,
 	std::pair<char8_t, char>, std::pair<char8_t, char8_t>, std::pair<char8_t, char16_t>, std::pair<char8_t, char32_t>,
 	std::pair<char16_t, char>, std::pair<char16_t, char8_t>, std::pair<char16_t, char16_t>, std::pair<char16_t, char32_t>,
 	std::pair<char32_t, char>, std::pair<char32_t, char8_t>, std::pair<char32_t, char16_t>, std::pair<char32_t, char32_t>>;
+#else // JESSILIB_CHAR_AS_UTF8
+using char_type_combos = ::testing::Types<
+	std::pair<char8_t, char8_t>, std::pair<char8_t, char16_t>, std::pair<char8_t, char32_t>,
+	std::pair<char16_t, char8_t>, std::pair<char16_t, char16_t>, std::pair<char16_t, char32_t>,
+	std::pair<char32_t, char8_t>, std::pair<char32_t, char16_t>, std::pair<char32_t, char32_t>>;
+#endif // JESSILIB_CHAR_AS_UTF8
 
 template<typename T>
 class UnicodeFullTest : public ::testing::Test {
@@ -157,9 +163,9 @@ TYPED_TEST(UnicodeFullTest, string_cast) {
 }
 
 TEST(UTF8Test, string_view_cast) {
-	auto abcd_str = jessilib::string_cast<char8_t>(U"ABCD");
-	auto view = string_view_cast<char>(abcd_str);
-	EXPECT_TRUE(equals(view, abcd_str));
+	std::string_view abcd_str = "ABCD";
+	auto view = string_view_cast<char8_t>(abcd_str);
+	EXPECT_TRUE(equals(view, u8"ABCD"sv));
 }
 
 /** equals */

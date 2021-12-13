@@ -23,8 +23,9 @@ using namespace std::literals;
 
 namespace jessilib {
 
-std::string make_json_string(std::u8string_view in_string) {
-	std::string result;
+template<typename CharT>
+std::basic_string<CharT> make_json_string(std::u8string_view in_string) {
+	std::basic_string<CharT> result;
 	result.reserve(in_string.size() + 2);
 	result = '\"';
 
@@ -39,23 +40,34 @@ std::string make_json_string(std::u8string_view in_string) {
 			result += '\"';
 		}
 		else if (decode.codepoint < 0x20) { // control characters
-			result += "\\u0000"sv;
+			result += '\\';
+			result += 'u';
+			result += '0';
+			result += '0';
 
 			// overwrite last 2 zeroes with correct hexadecimal sequence
-			char* data_end = result.data() + result.size();
-			char* data = data_end - 2; // Will only ever use 2 chars
+			char data[2]; // Will only ever use 2 chars
+			char* data_end = data + sizeof(data);
 			auto to_chars_result = std::to_chars(data, data_end, static_cast<uint32_t>(decode.codepoint), 16);
-			if (to_chars_result.ec == std::errc{} && to_chars_result.ptr != data_end) {
-				// Only 1 byte written; shift it over
-				*to_chars_result.ptr = *(to_chars_result.ptr - 1);
-
-				// And fill in the zeroes
-				*(to_chars_result.ptr - 1) = '0';
+			if (to_chars_result.ptr == data) {
+				// No bytes written
+				result += '0';
+				result += '0';
+			}
+			else if (to_chars_result.ptr != data_end) {
+				// 1 byte written
+				result += '0';
+				result += data[0];
+			}
+			else {
+				// 2 bytes written
+				result += data[0];
+				result += data[1];
 			}
 		}
 		else {
 			// Valid UTF-8 sequence; copy it over
-			result.append(reinterpret_cast<const char*>(in_string.data()), decode.units);
+			result.append(in_string.data(), decode.units);
 		}
 
 		in_string.remove_prefix(decode.units);
@@ -67,41 +79,42 @@ std::string make_json_string(std::u8string_view in_string) {
 
 
 
-object json_parser::deserialize(std::string_view in_data) {
+object json_parser::deserialize(std::u8string_view in_data) {
 	object result;
-	deserialize_json<char, true>(result, in_data);
+	std::u8string_view data_view = jessilib::string_view_cast<char8_t>(in_data);
+	deserialize_json<char8_t, true>(result, data_view);
 	return result;
 }
 
-std::string json_parser::serialize(const object& in_object) {
+std::u8string json_parser::serialize(const object& in_object) {
 	static const object::array_type s_null_array;
 	static const object::map_type s_null_map;
 
 	switch (in_object.type()) {
 		case object::type::null:
-			return "null"s;
+			return u8"null"s;
 
 		case object::type::boolean:
 			if (in_object.get<bool>()) {
-				return "true"s;
+				return u8"true"s;
 			}
-			return "false"s;
+			return u8"false"s;
 
 		case object::type::integer:
-			return std::to_string(in_object.get<intmax_t>());
+			return static_cast<std::u8string>(jessilib::string_view_cast<char8_t>(std::to_string(in_object.get<intmax_t>())));
 
 		case object::type::decimal:
-			return std::to_string(in_object.get<long double>());
+			return static_cast<std::u8string>(jessilib::string_view_cast<char8_t>(std::to_string(in_object.get<long double>())));
 
 		case object::type::text:
-			return make_json_string(in_object.get<std::u8string>());
+			return make_json_string<char8_t>(in_object.get<std::u8string>());
 
 		case object::type::array: {
 			if (in_object.size() == 0) {
-				return "[]"s;
+				return u8"[]"s;
 			}
 
-			std::string result;
+			std::u8string result;
 			result = '[';
 
 			// Serialize all objects in array
@@ -117,16 +130,16 @@ std::string json_parser::serialize(const object& in_object) {
 
 		case object::type::map: {
 			if (in_object.size() == 0) {
-				return "{}"s;
+				return u8"{}"s;
 			}
 
-			std::string result;
+			std::u8string result;
 			result = '{';
 
 			// Serialize all objects in map
 			for (auto& item : in_object.get<object::map_type>(s_null_map)) {
-				result += make_json_string(item.first);
-				result += ":"sv;
+				result += make_json_string<char8_t>(item.first);
+				result += ':';
 				result += json_parser::serialize(item.second);
 				result += ',';
 			}

@@ -30,11 +30,11 @@ using namespace std::literals;
 class test_parser : public parser {
 public:
 	/** deserialize/serialize overrides */
-	virtual object deserialize(std::string_view in_data) override {
+	virtual object deserialize(std::u8string_view in_data) override {
 		return deserialize_impl(in_data);
 	}
 
-	virtual std::string serialize(const object& in_object) override {
+	virtual std::u8string serialize(const object& in_object) override {
 		return serialize_impl(in_object);
 	}
 
@@ -45,26 +45,26 @@ public:
 	}
 
 	/** default serialize/deserialize implementations */
-	static std::string serialize_default(const object& in_object) {
+	static std::u8string serialize_default(const object& in_object) {
 		if (in_object.has<std::u8string>()) {
-			return string_cast<char>(in_object.get<std::u8string>());
+			return in_object.get<std::u8string>();
 		}
 
-		return static_cast<std::string>(DEFAULT_SERIALIZE_RESULT);
+		return static_cast<std::u8string>(DEFAULT_SERIALIZE_RESULT);
 	}
 
-	static object deserialize_default(std::string_view in_data) {
+	static object deserialize_default(std::u8string_view in_data) {
 		return object{ string_view_cast<char8_t>(in_data) };
 	}
 
 	/** static members */
-	static constexpr std::string_view DEFAULT_SERIALIZE_RESULT = "serialize_result"sv;
-	static std::function<std::string(const object&)> serialize_impl;
-	static std::function<object(std::string_view)> deserialize_impl;
+	static constexpr std::u8string_view DEFAULT_SERIALIZE_RESULT = u8"serialize_result"sv;
+	static std::function<std::u8string(const object&)> serialize_impl;
+	static std::function<object(std::u8string_view)> deserialize_impl;
 };
 
-std::function<std::string(const object&)> test_parser::serialize_impl{ &serialize_default };
-std::function<object(std::string_view)> test_parser::deserialize_impl{ &deserialize_default };
+std::function<std::u8string(const object&)> test_parser::serialize_impl{ &serialize_default };
+std::function<object(std::u8string_view)> test_parser::deserialize_impl{ &deserialize_default };
 
 parser_registration<test_parser> test_parser_registration{ "test" };
 
@@ -84,30 +84,30 @@ class ParserTest : public base_test {
 
 TEST_F(ParserTest, find_parser) {
 	EXPECT_NO_THROW(serialize_object(u8"test_data", "test"));
-	EXPECT_NO_THROW(deserialize_object("test_data"sv, "test"));
+	EXPECT_NO_THROW(deserialize_object(u8"test_data"sv, "test"));
 
 	EXPECT_THROW(serialize_object(u8"test_data", "invalid_format_test"), format_not_available);
-	EXPECT_THROW(deserialize_object("test_data"sv, "invalid_format_test"), format_not_available);
+	EXPECT_THROW(deserialize_object(u8"test_data"sv, "invalid_format_test"), format_not_available);
 }
 
 TEST_F(ParserTest, temp_parser) {
 	EXPECT_THROW(serialize_object(u8"test_data", "test_tmp"), format_not_available);
-	EXPECT_THROW(deserialize_object("test_data"sv, "test_tmp"), format_not_available);
+	EXPECT_THROW(deserialize_object(u8"test_data"sv, "test_tmp"), format_not_available);
 
 	{
 		parser_registration<test_parser> test_tmp_registration{ "test_tmp" };
 		EXPECT_NO_THROW(serialize_object(u8"test_data", "test_tmp"));
-		EXPECT_NO_THROW(deserialize_object("test_data"sv, "test_tmp"));
+		EXPECT_NO_THROW(deserialize_object(u8"test_data"sv, "test_tmp"));
 	}
 
 	EXPECT_THROW(serialize_object(u8"test_data", "test_tmp"), format_not_available);
-	EXPECT_THROW(deserialize_object("test_data"sv, "test_tmp"), format_not_available);
+	EXPECT_THROW(deserialize_object(u8"test_data"sv, "test_tmp"), format_not_available);
 }
 
 TEST_F(ParserTest, serialize) {
-	EXPECT_EQ(serialize_object(u8"test_data", "test"), "test_data");
+	EXPECT_EQ(serialize_object(u8"test_data", "test"), u8"test_data");
 }
 
 TEST_F(ParserTest, deserialize) {
-	EXPECT_EQ(deserialize_object("test_data"sv, "test").get<std::u8string>(), u8"test_data");
+	EXPECT_EQ(deserialize_object(u8"test_data"sv, "test").get<std::u8string>(), u8"test_data");
 }

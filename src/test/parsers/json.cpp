@@ -25,26 +25,26 @@ using namespace std::literals;
 TEST(JsonParser, serialize_null) {
 	json_parser parser;
 
-	EXPECT_EQ(parser.serialize({}), "null");
+	EXPECT_EQ(parser.serialize({}), u8"null");
 }
 
 TEST(JsonParser, serialize_boolean) {
 	json_parser parser;
 
-	EXPECT_EQ(parser.serialize(true), "true");
-	EXPECT_EQ(parser.serialize(false), "false");
+	EXPECT_EQ(parser.serialize(true), u8"true");
+	EXPECT_EQ(parser.serialize(false), u8"false");
 }
 
 TEST(JsonParser, serialize_integer) {
 	json_parser parser;
 
-	EXPECT_EQ(parser.serialize(1234), "1234");
+	EXPECT_EQ(parser.serialize(1234), u8"1234");
 }
 
 TEST(JsonParser, serialize_decimal) {
 	json_parser parser;
-	EXPECT_DOUBLE_EQ(std::atof(parser.serialize(12.34).c_str()), 12.34);
-	EXPECT_DOUBLE_EQ(std::atof(parser.serialize(1234.0).c_str()), 1234.0);
+	EXPECT_DOUBLE_EQ(std::atof(reinterpret_cast<const char*>(parser.serialize(12.34).c_str())), 12.34);
+	EXPECT_DOUBLE_EQ(std::atof(reinterpret_cast<const char*>(parser.serialize(1234.0).c_str())), 1234.0);
 }
 
 // necessary due to some sort of bug with EXPECT_EQ on MSVC
@@ -56,10 +56,10 @@ void expect_eq(LeftT in_left, RightT in_right) {
 TEST(JsonParser, serialize_string) {
 	json_parser parser;
 
-	EXPECT_EQ(parser.serialize(u8"text"), R"json("text")json");
-	expect_eq(parser.serialize(u8"\"text\""), R"json("\"text\"")json");
-	expect_eq(parser.serialize(u8"\"te\x01xt\""), R"json("\"te\u0001xt\"")json");
-	expect_eq(parser.serialize(u8"\"te\x10xt\""), R"json("\"te\u0010xt\"")json");
+	EXPECT_EQ(parser.serialize(u8"text"), u8R"json("text")json");
+	expect_eq(parser.serialize(u8"\"text\""), u8R"json("\"text\"")json");
+	expect_eq(parser.serialize(u8"\"te\x01xt\""), u8R"json("\"te\u0001xt\"")json");
+	expect_eq(parser.serialize(u8"\"te\x10xt\""), u8R"json("\"te\u0010xt\"")json");
 }
 
 TEST(JsonParser, serialize_array) {
@@ -72,7 +72,7 @@ TEST(JsonParser, serialize_array) {
 	};
 
 	EXPECT_EQ(parser.serialize(array),
-		R"json([true,1234,"text",null])json");
+		u8R"json([true,1234,"text",null])json");
 }
 
 TEST(JsonParser, serialize_map) {
@@ -85,43 +85,43 @@ TEST(JsonParser, serialize_map) {
 	obj[u8"some_null"];
 
 	EXPECT_EQ(parser.serialize(obj),
-		R"json({"some_bool":true,"some_int":1234,"some_null":null,"some_string":"text"})json");
+		u8R"json({"some_bool":true,"some_int":1234,"some_null":null,"some_string":"text"})json");
 }
 
 TEST(JsonParser, deserialize_null) {
 	json_parser parser;
 
-	EXPECT_EQ(parser.deserialize("null"sv), object{});
+	EXPECT_EQ(parser.deserialize(u8"null"sv), object{});
 }
 
 TEST(JsonParser, deserialize_boolean) {
 	json_parser parser;
 
-	EXPECT_EQ(parser.deserialize("true"sv), true);
-	EXPECT_EQ(parser.deserialize("false"sv), false);
+	EXPECT_EQ(parser.deserialize(u8"true"sv), true);
+	EXPECT_EQ(parser.deserialize(u8"false"sv), false);
 }
 
 TEST(JsonParser, deserialize_integer) {
 	json_parser parser;
 
-	EXPECT_EQ(parser.deserialize("1234"sv), 1234);
-	EXPECT_EQ(parser.deserialize("-1234"sv), -1234);
+	EXPECT_EQ(parser.deserialize(u8"1234"sv), 1234);
+	EXPECT_EQ(parser.deserialize(u8"-1234"sv), -1234);
 }
 
 TEST(JsonParser, deserialize_decimal) {
 	json_parser parser;
 
-	EXPECT_DOUBLE_EQ(parser.deserialize("12.34"sv).get<double>(), 12.34);
-	EXPECT_DOUBLE_EQ(parser.deserialize("1234."sv).get<double>(), 1234.0);
-	EXPECT_DOUBLE_EQ(parser.deserialize("0.1234"sv).get<double>(), 0.1234);
-	EXPECT_THROW(parser.deserialize(".1234"sv), std::invalid_argument);
-	EXPECT_DOUBLE_EQ(parser.deserialize("-12.34"sv).get<double>(), -12.34);
+	EXPECT_DOUBLE_EQ(parser.deserialize(u8"12.34"sv).get<double>(), 12.34);
+	EXPECT_DOUBLE_EQ(parser.deserialize(u8"1234."sv).get<double>(), 1234.0);
+	EXPECT_DOUBLE_EQ(parser.deserialize(u8"0.1234"sv).get<double>(), 0.1234);
+	EXPECT_THROW(parser.deserialize(u8".1234"sv), std::invalid_argument);
+	EXPECT_DOUBLE_EQ(parser.deserialize(u8"-12.34"sv).get<double>(), -12.34);
 }
 
 TEST(JsonParser, deserialize_string) {
 	json_parser parser;
 
-	EXPECT_EQ(parser.deserialize(R"json("text")json"sv), u8"text");
+	EXPECT_EQ(parser.deserialize(u8R"json("text")json"sv), u8"text");
 
 	object obj;
 	std::u8string_view u8text = u8R"json("text")json"sv;
@@ -143,7 +143,7 @@ TEST(JsonParser, deserialize_string) {
 TEST(JsonParser, deserialize_array) {
 	json_parser parser;
 
-	constexpr const char* json_data = R"json([
+	constexpr const char8_t* json_data = u8R"json([
 		true,
 		false,
 		1234,
@@ -165,7 +165,7 @@ TEST(JsonParser, deserialize_array) {
 TEST(JsonParser, deserialize_array_nested) {
 	json_parser parser;
 
-	constexpr const char* json_data = R"json([
+	constexpr const char8_t* json_data = u8R"json([
 		true,
 		false,
 		1234
@@ -211,7 +211,7 @@ TEST(JsonParser, deserialize_array_nested) {
 TEST(JsonParser, deserialize_map) {
 	json_parser parser;
 
-	constexpr const char* json_data = R"json({
+	constexpr const char8_t* json_data = u8R"json({
 		"some_true":true,
 		"some_false"	:  false,
 		"some_int": 1234,
@@ -233,7 +233,7 @@ TEST(JsonParser, deserialize_map) {
 TEST(JsonParser, deserialize_map_nested) {
 	json_parser parser;
 
-	constexpr const char* json_data = R"json({
+	constexpr const char8_t* json_data = u8R"json({
 		"some_text" : "text",
 		"some_object" : {
 			"some_null_object": {}

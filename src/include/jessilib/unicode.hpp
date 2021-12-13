@@ -112,24 +112,30 @@ bool is_valid(const InT& in_string) {
 template<typename OutCharT, typename InT>
 std::basic_string_view<OutCharT> string_view_cast(const InT& in_string) {
 	using InCharT = typename impl_unicode::is_string<InT>::type;
-	size_t in_string_bytes = in_string.size() * sizeof(InCharT);
-	if constexpr (sizeof(OutCharT) > sizeof(InCharT)) {
-		// The output type is larger than the input type; verify no partial codepoints
-		if (in_string_bytes % sizeof(OutCharT) != 0) {
-			// This cannot be used to produce a valid result
-			return {};
-		}
-	}
 
-	size_t out_string_units = in_string_bytes / sizeof(OutCharT);
-	const OutCharT* data_begin = reinterpret_cast<const OutCharT*>(in_string.data());
-	return { data_begin, out_string_units };
+	if constexpr (sizeof(InCharT) == sizeof(OutCharT)) {
+		return { reinterpret_cast<const OutCharT*>(in_string.data()), in_string.size() };
+	}
+	else {
+		size_t in_string_bytes = in_string.size() * sizeof(InCharT);
+		if constexpr (sizeof(OutCharT) > sizeof(InCharT)) {
+			// The output type is larger than the input type; verify no partial codepoints
+			if (in_string_bytes % sizeof(OutCharT) != 0) {
+				// This cannot be used to produce a valid result
+				return {};
+			}
+		}
+
+		size_t out_string_units = in_string_bytes / sizeof(OutCharT);
+		const OutCharT* data_begin = reinterpret_cast<const OutCharT*>(in_string.data());
+		return { data_begin, out_string_units };
+	}
 }
 
 template<typename OutCharT, typename InT>
 std::basic_string<OutCharT> string_cast(const InT& in_string) {
 	static_assert(impl_unicode::is_string<InT>::value == true);
-	using InCharT = typename impl_unicode::is_string<InT>::type;
+	using InCharT = std::remove_cvref_t<typename impl_unicode::is_string<InT>::type>;
 	using InEquivalentT = typename unicode_traits<InCharT>::equivalent_type;
 	using InViewT = std::basic_string_view<InCharT>;
 	using OutT = std::basic_string<OutCharT>;
@@ -392,7 +398,7 @@ size_t findi(std::basic_string_view<LhsCharT> in_string, std::basic_string_view<
 
 ADAPT_BASIC_STRING(findi)
 
-using find_if_predicate_type = bool(*)(char32_t, char*, size_t);
+/*using find_if_predicate_type = bool(*)(char32_t, char*, size_t);
 inline void find_if(std::basic_string<char>& in_string, find_if_predicate_type in_predicate) {
 	using CharT = char;
 	CharT* ptr = in_string.data();
@@ -422,7 +428,7 @@ inline void find_if(std::basic_string_view<char>& in_string, find_if_view_predic
 		in_string_view.remove_prefix(decode.units);
 		ptr += decode.units;
 	}
-}
+}*/
 
 namespace impl_join {
 

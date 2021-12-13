@@ -17,12 +17,13 @@
  */
 
 #include "parser.hpp"
+#include "unicode.hpp"
 #include <istream>
 
 namespace jessilib {
 
 object parser::deserialize(std::istream& in_stream) {
-	std::vector<char> data;
+	std::vector<char8_t> data;
 
 	// Read entire stream into data
 	char buffer[1024];
@@ -32,11 +33,12 @@ object parser::deserialize(std::istream& in_stream) {
 	}
 
 	// Pass data to deserialize
-	return deserialize(std::string_view{ &data.front(), data.size() });
+	return deserialize(std::u8string_view{ &data.front(), data.size() });
 }
 
 void parser::serialize(std::ostream& in_stream, const object& in_object) {
-	in_stream << serialize(in_object);
+	// TODO: replace this method
+	in_stream << jessilib::string_view_cast<char>(serialize(in_object));
 }
 
 } // namespace jessilib

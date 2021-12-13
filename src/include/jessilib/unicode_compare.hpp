@@ -285,6 +285,7 @@ struct text_hash {
 		return hash;
 	}
 
+#ifdef JESSILIB_CHAR_AS_UTF8
 	auto operator()(const std::basic_string<char>& in_key) const noexcept { // ASSUMES UTF-8
 		return hash(in_key.data(), in_key.data() + in_key.size());
 	}
@@ -292,6 +293,7 @@ struct text_hash {
 	auto operator()(std::basic_string_view<char> in_key) const noexcept {
 		return hash(in_key.data(), in_key.data() + in_key.size());
 	}
+#endif // JESSILIB_CHAR_AS_UTF8
 
 	auto operator()(const std::basic_string<char8_t>& in_key) const noexcept { // ASSUMES UTF-8
 		return hash(in_key.data(), in_key.data() + in_key.size());
@@ -321,10 +323,12 @@ struct text_hash {
 struct text_equal {
 	using is_transparent = std::true_type;
 
+#ifdef JESSILIB_CHAR_AS_UTF8
 	template<typename LhsCharT, typename RhsCharT>
 	bool operator()(std::basic_string_view<LhsCharT> in_lhs, std::basic_string_view<RhsCharT> in_rhs) const noexcept {
 		return equals<LhsCharT, RhsCharT>(in_lhs, in_rhs);
 	}
+#endif // JESSILIB_CHAR_AS_UTF8
 
 	template<typename LhsCharT, typename RhsCharT>
 	bool operator()(std::basic_string_view<LhsCharT> in_lhs, const std::basic_string<RhsCharT>& in_rhs) const noexcept {
@@ -370,6 +374,7 @@ struct text_hashi {
 		return hash;
 	}
 
+#ifdef JESSILIB_CHAR_AS_UTF8
 	auto operator()(const std::basic_string<char>& in_key) const noexcept { // ASSUMES UTF-8
 		return hash(in_key.data(), in_key.data() + in_key.size());
 	}
@@ -377,6 +382,7 @@ struct text_hashi {
 	auto operator()(std::basic_string_view<char> in_key) const noexcept {
 		return hash(in_key.data(), in_key.data() + in_key.size());
 	}
+#endif // JESSILIB_CHAR_AS_UTF8
 
 	auto operator()(const std::basic_string<char8_t>& in_key) const noexcept { // ASSUMES UTF-8
 		return hash(in_key.data(), in_key.data() + in_key.size());
@@ -406,10 +412,12 @@ struct text_hashi {
 struct text_equali {
 	using is_transparent = std::true_type;
 
+#ifdef JESSILIB_CHAR_AS_UTF8
 	template<typename LhsCharT, typename RhsCharT>
 	bool operator()(std::basic_string_view<LhsCharT> in_lhs, std::basic_string_view<RhsCharT> in_rhs) const noexcept {
 		return equalsi<LhsCharT, RhsCharT>(in_lhs, in_rhs);
 	}
+#endif // JESSILIB_CHAR_AS_UTF8
 
 	template<typename LhsCharT, typename RhsCharT>
 	bool operator()(std::basic_string_view<LhsCharT> in_lhs, const std::basic_string<RhsCharT>& in_rhs) const noexcept {
