@@ -244,6 +244,11 @@ std::pair<bool, std::string> ustring_to_mbstring(std::basic_string_view<CharT> i
 	return result;
 }
 
+template<typename CharT>
+std::pair<bool, std::string> ustring_to_mbstring(const std::basic_string<CharT>& in_string) {
+	return ustring_to_mbstring(std::basic_string_view<CharT>{ in_string });
+}
+
 /**
  * Searches a string for a specified substring
  *
