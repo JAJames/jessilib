@@ -17,12 +17,11 @@
  */
 
 #include "parser.hpp"
-#include "unicode.hpp"
 #include <istream>
 
 namespace jessilib {
 
-object parser::deserialize_bytes(std::istream& in_stream, encoding in_read_encoding) {
+object parser::deserialize_bytes(std::istream& in_stream, text_encoding in_read_encoding) {
 	std::vector<byte_type> data;
 
 	// Read entire stream into data
@@ -36,10 +35,10 @@ object parser::deserialize_bytes(std::istream& in_stream, encoding in_read_encod
 	return deserialize_bytes(bytes_view_type{ &data.front(), data.size() }, in_read_encoding);
 }
 
-void parser::serialize_bytes(std::ostream& in_stream, const object& in_object, encoding in_write_encoding) {
+void parser::serialize_bytes(std::ostream& in_stream, const object& in_object, text_encoding in_write_encoding) {
 	// TODO: replace this method
 	auto bytes = serialize_bytes(in_object, in_write_encoding);
-	in_stream << bytes;
+	in_stream.write(bytes.data(), bytes.size());
 }
 
 } // namespace jessilib

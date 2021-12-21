@@ -20,26 +20,26 @@
 
 namespace jessilib {
 
-object json_parser::deserialize_bytes(bytes_view_type in_data, encoding in_write_encoding) {
+object json_parser::deserialize_bytes(bytes_view_type in_data, text_encoding in_write_encoding) {
 	object result;
 
-	if (in_write_encoding == encoding::utf_8) {
+	if (in_write_encoding == text_encoding::utf_8) {
 		std::u8string_view data_view = jessilib::string_view_cast<char8_t>(in_data);
 		deserialize_json<char8_t, true>(result, data_view);
 	}
-	else if (in_write_encoding == encoding::utf_16) {
+	else if (in_write_encoding == text_encoding::utf_16) {
 		std::u16string_view data_view = jessilib::string_view_cast<char16_t>(in_data);
 		deserialize_json<char16_t, true>(result, data_view);
 	}
-	else if (in_write_encoding == encoding::utf_32) {
+	else if (in_write_encoding == text_encoding::utf_32) {
 		std::u32string_view data_view = jessilib::string_view_cast<char32_t>(in_data);
 		deserialize_json<char32_t, true>(result, data_view);
 	}
-	else if (in_write_encoding == encoding::wchar) {
+	else if (in_write_encoding == text_encoding::wchar) {
 		std::wstring_view data_view = jessilib::string_view_cast<wchar_t>(in_data);
 		deserialize_json<wchar_t, true>(result, data_view);
 	}
-	else if (in_write_encoding == encoding::multibyte) {
+	else if (in_write_encoding == text_encoding::multibyte) {
 		// TODO: support without copying... somehow
 		auto u8_data = mbstring_to_ustring<char8_t>(jessilib::string_view_cast<char>(in_data));
 		std::u8string_view data_view = u8_data.second;
@@ -49,15 +49,15 @@ object json_parser::deserialize_bytes(bytes_view_type in_data, encoding in_write
 	return result;
 }
 
-std::string json_parser::serialize_bytes(const object& in_object, encoding in_write_encoding) {
+std::string json_parser::serialize_bytes(const object& in_object, text_encoding in_write_encoding) {
 	switch (in_write_encoding) {
-		case encoding::utf_8:
+		case text_encoding::utf_8:
 			return serialize_impl<char8_t, char>(in_object);
-		case encoding::utf_16:
+		case text_encoding::utf_16:
 			return serialize_impl<char16_t, char>(in_object);
-		case encoding::utf_32:
+		case text_encoding::utf_32:
 			return serialize_impl<char16_t, char>(in_object);
-		case encoding::wchar:
+		case text_encoding::wchar:
 			return serialize_impl<char16_t, char>(in_object);
 		default:
 			break;

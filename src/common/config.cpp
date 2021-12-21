@@ -53,6 +53,11 @@ std::string config::format() const {
 	return m_format;
 }
 
+text_encoding config::encoding() const {
+	std::shared_lock<std::shared_mutex> guard{ m_mutex };
+	return m_encoding;
+}
+
 /** Modifiers */
 void config::set_data(const object& in_data) {
 	std::lock_guard<std::shared_mutex> guard{ m_mutex };
@@ -60,16 +65,17 @@ void config::set_data(const object& in_data) {
 }
 
 /** File I/O */
-void config::load(const std::filesystem::path& in_filename, const std::string& in_format) {
+void config::load(const std::filesystem::path& in_filename, const std::string& in_format, text_encoding in_encoding) {
 	jessilib_assert(!in_filename.empty());
 	std::lock_guard<std::shared_mutex> guard{ m_mutex };
 
 	// Determine format
 	m_filename = in_filename;
 	m_format = get_format(m_filename, in_format);
+	m_encoding = in_encoding;
 
 	// Load
-	m_data = read_object(m_filename, m_format);
+	m_data = read_object(m_filename, m_format, m_encoding);
 }
 
 void config::reload() {
@@ -92,20 +98,21 @@ void config::write() const {
 	}
 }
 
-void config::write(const std::filesystem::path& in_filename , const std::string& in_format) {
+void config::write(const std::filesystem::path& in_filename , const std::string& in_format, text_encoding in_encoding) {
 	jessilib_assert(!in_filename.empty());
 	std::lock_guard<std::shared_mutex> guard{ m_mutex };
 
 	// Setup
 	m_filename = in_filename;
 	m_format = get_format(m_filename, in_format);
+	m_encoding = in_encoding;
 
 	// Write
-	write_object(m_data, m_filename, m_format);
+	write_object(m_data, m_filename, m_format, m_encoding);
 }
 
 /** Static File I/O */
-object config::read_object(const std::filesystem::path& in_filename, const std::string& in_format) {
+object config::read_object(const std::filesystem::path& in_filename, const std::string& in_format, text_encoding in_encoding) {
 	// Open up file for reading
 	std::ifstream file{ in_filename, std::ios::in | std::ios::binary };
 	if (!file) {
@@ -114,10 +121,10 @@ object config::read_object(const std::filesystem::path& in_filename, const std::
 	}
 
 	// Deserialize1
-	return deserialize_object(file, get_format(in_filename, in_format));
+	return deserialize_object(file, get_format(in_filename, in_format), in_encoding);
 }
 
-void config::write_object(const object& in_object, const std::filesystem::path& in_filename, const std::string& in_format) {
+void config::write_object(const object& in_object, const std::filesystem::path& in_filename, const std::string& in_format, text_encoding in_encoding) {
 	// Open up file for writing
 	std::ofstream file{ in_filename, std::ios::out | std::ios::binary };
 	if (!file) {
@@ -126,7 +133,7 @@ void config::write_object(const object& in_object, const std::filesystem::path& 
 	}
 
 	// Deserialize1
-	return serialize_object(file, in_object, get_format(in_filename, in_format));
+	return serialize_object(file, in_object, get_format(in_filename, in_format), in_encoding);
 }
 
 std::string config::get_format(const std::filesystem::path& in_filename, const std::string& in_format) {

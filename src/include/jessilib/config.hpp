@@ -24,6 +24,7 @@
 #include <filesystem>
 #include <shared_mutex>
 #include "object.hpp"
+#include "text_encoding.hpp"
 
 namespace jessilib {
 
@@ -41,19 +42,20 @@ public:
 	object data() const;
 	std::filesystem::path filename() const;
 	std::string format() const;
+	text_encoding encoding() const;
 
 	/** Modifiers */
 	void set_data(const object& in_data);
 
 	/** File I/O */
-	void load(const std::filesystem::path& in_filename, const std::string& in_format = {});
+	void load(const std::filesystem::path& in_filename, const std::string& in_format = {}, text_encoding in_encoding = text_encoding::utf_8);
 	void reload();
 	void write() const;
-	void write(const std::filesystem::path& in_filename , const std::string& in_format = {});
+	void write(const std::filesystem::path& in_filename, const std::string& in_format = {}, text_encoding in_encoding = text_encoding::utf_8);
 
 	/** Static File I/O */
-	static object read_object(const std::filesystem::path& in_filename, const std::string& in_format = {});
-	static void write_object(const object& in_object, const std::filesystem::path& in_filename, const std::string& in_format = {});
+	static object read_object(const std::filesystem::path& in_filename, const std::string& in_format = {}, text_encoding in_encoding = text_encoding::utf_8);
+	static void write_object(const object& in_object, const std::filesystem::path& in_filename, const std::string& in_format = {}, text_encoding in_encoding = text_encoding::utf_8);
 
 	/** Static helpers */
 	static std::string get_format(const std::filesystem::path& in_filename, const std::string& in_format = {});
@@ -62,6 +64,7 @@ private:
 	mutable std::shared_mutex m_mutex;
 	object m_data;
 	std::string m_format;
+	text_encoding m_encoding;
 	std::filesystem::path m_filename;
 };
 

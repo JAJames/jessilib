@@ -33,7 +33,7 @@ void console_input_loop() {
 	std::wstring input;
 	auto shutdown_future = get_shutdown_future();
 	while (shutdown_future.wait_for(std::chrono::milliseconds(10)) != std::future_status::ready) {
-		std::getline(std::wcin, input); // TODO: use a non-bloicking call and poll running periodically?
+		std::getline(std::wcin, input); // TODO: use a non-blocking call and poll running periodically?
 		jessibot::io::console_command_context context{ jessilib::string_cast<char8_t>(input) };
 		if (!command_manager::instance().execute_command(context)) {
 			text error_text{ u8"ERROR", text::property::bold, color{ 0xFF0000 }};

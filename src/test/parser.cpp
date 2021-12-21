@@ -30,50 +30,54 @@ using namespace std::literals;
 class test_parser : public parser {
 public:
 	/** deserialize/serialize overrides */
-	object deserialize_bytes(bytes_view_type in_data, encoding in_write_encoding) override {
+	object deserialize_bytes(bytes_view_type in_data, text_encoding in_write_encoding) override {
 		std::u8string u8_string;
 
 		switch (in_write_encoding) {
-			case encoding::utf_8:
+			case text_encoding::utf_8:
 				u8_string = string_view_cast<char8_t>(in_data);
 				break;
-			case encoding::utf_16:
+			case text_encoding::utf_16:
 				u8_string = jessilib::string_cast<char8_t>(string_view_cast<char16_t>(in_data));
 				break;
-			case encoding::utf_32:
+			case text_encoding::utf_32:
 				u8_string = jessilib::string_cast<char8_t>(string_view_cast<char32_t>(in_data));
 				break;
-			case encoding::wchar:
+			case text_encoding::wchar:
 				u8_string = jessilib::string_cast<char8_t>(string_view_cast<wchar_t>(in_data));
 				break;
-			case encoding::multibyte:
+			case text_encoding::multibyte:
 				u8_string = mbstring_to_ustring<char8_t>(string_view_cast<char>(in_data)).second;
+				break;
+			default:
 				break;
 		}
 
 		return deserialize_impl(std::u8string_view{ u8_string });
 	}
 
-	std::string serialize_bytes(const object& in_object, encoding in_write_encoding) override {
+	std::string serialize_bytes(const object& in_object, text_encoding in_write_encoding) override {
 		std::u8string u8_serialized = serialize_impl(in_object);
 
 		switch (in_write_encoding) {
-			case encoding::utf_8:
+			case text_encoding::utf_8:
 				return { u8_serialized.begin(), u8_serialized.end() };
-			case encoding::utf_16: {
+			case text_encoding::utf_16: {
 				auto casted = string_cast<char16_t>(u8_serialized);
 				return { reinterpret_cast<const char*>(casted.data()), casted.size() * sizeof(char16_t) };
 			}
-			case encoding::utf_32: {
+			case text_encoding::utf_32: {
 				auto casted = string_cast<char32_t>(u8_serialized);
 				return { reinterpret_cast<const char*>(casted.data()), casted.size() * sizeof(char32_t) };
 			}
-			case encoding::wchar: {
+			case text_encoding::wchar: {
 				auto casted = string_cast<wchar_t>(u8_serialized);
 				return { reinterpret_cast<const char*>(casted.data()), casted.size() * sizeof(wchar_t) };
 			}
-			case encoding::multibyte:
+			case text_encoding::multibyte:
 				return ustring_to_mbstring(u8_serialized).second;
+			default:
+				break;
 		}
 
 		return {};

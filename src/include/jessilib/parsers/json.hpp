@@ -30,8 +30,8 @@ namespace jessilib {
 class json_parser : public parser {
 public:
 	/** deserialize/serialize overrides */
-	object deserialize_bytes(bytes_view_type in_data, encoding in_write_encoding) override;
-	std::string serialize_bytes(const object& in_object, encoding in_write_encoding) override;
+	object deserialize_bytes(bytes_view_type in_data, text_encoding in_write_encoding) override;
+	std::string serialize_bytes(const object& in_object, text_encoding in_write_encoding) override;
 
 	std::u8string serialize_u8(const object& in_object) override { return serialize_impl<char8_t>(in_object); }
 	std::u16string serialize_u16(const object& in_object) override { return serialize_impl<char16_t>(in_object); }

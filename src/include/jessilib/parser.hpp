@@ -20,7 +20,7 @@
 
 #include <memory>
 #include "object.hpp"
-#include "unicode_base.hpp"
+#include "text_encoding.hpp"
 #include "impl/parser_manager.hpp"
 
 namespace jessilib {
@@ -40,15 +40,15 @@ public:
 	 * @param in_stream Stream to deserialize object from
 	 * @return A valid (possibly null) object
 	 */
-	virtual object deserialize_bytes(std::istream& in_stream, encoding in_read_encoding);
-	virtual object deserialize_bytes(bytes_view_type in_data, encoding in_read_encoding) = 0;
-	virtual void serialize_bytes(std::ostream& in_stream, const object& in_object, encoding in_write_encoding);
-	virtual std::string serialize_bytes(const object& in_object, encoding in_write_encoding) = 0;
+	virtual object deserialize_bytes(std::istream& in_stream, text_encoding in_read_encoding);
+	virtual object deserialize_bytes(bytes_view_type in_data, text_encoding in_read_encoding) = 0;
+	virtual void serialize_bytes(std::ostream& in_stream, const object& in_object, text_encoding in_write_encoding);
+	virtual std::string serialize_bytes(const object& in_object, text_encoding in_write_encoding) = 0;
 
 	template<typename CharT>
 	object deserialize(std::basic_string_view<CharT> in_text) {
 		bytes_view_type byte_view{ reinterpret_cast<const byte_type*>(in_text.data()), in_text.size() * sizeof(CharT) };
-		return deserialize_bytes(byte_view, default_encoding_info<CharT>::text_encoding);
+		return deserialize_bytes(byte_view, default_encoding_info<CharT>::encoding);
 	}
 
 	// Perhaps this could be condensed down to a simple method such that: serialize(out_variant, in_object, encoding)?

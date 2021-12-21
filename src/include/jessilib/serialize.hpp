@@ -20,6 +20,7 @@
 
 #include <istream>
 #include "object.hpp"
+#include "text_encoding.hpp"
 
 namespace jessilib {
 
@@ -34,10 +35,10 @@ object deserialize_object(std::u16string_view in_data, const std::string& in_for
 object deserialize_object(std::u32string_view in_data, const std::string& in_format);
 object deserialize_object(const std::vector<char8_t>& in_data, const std::string& in_format);
 //object deserialize_object(std::u8string_view in_data, const std::string& in_format);
-object deserialize_object(std::istream& in_stream, const std::string& in_format); // TODO: add encoding param
+object deserialize_object(std::istream& in_stream, const std::string& in_format, text_encoding in_encoding = text_encoding::unknown);
 
 /** Serialization */
 std::u8string serialize_object(const object& in_object, const std::string& in_format); // TODO: templatize?
-void serialize_object(std::ostream& in_stream, const object& in_object, const std::string& in_format); // TODO: add encoding param
+void serialize_object(std::ostream& in_stream, const object& in_object, const std::string& in_format, text_encoding in_encoding = text_encoding::unknown);
 
 } // namespace jessilib

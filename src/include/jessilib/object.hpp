@@ -252,10 +252,22 @@ public:
 	T get(DefaultT&& in_default_value) const {
 		const string_type* result = std::get_if<string_type>(&m_value);
 		if (result != nullptr) {
-			return *result;
+			return T{ *result };
 		}
 
 		return { in_default_value.begin(), in_default_value.end() };
+	}
+
+	// TODO: support other basic_string_view types
+	template<typename T, typename DefaultT = T,
+		typename std::enable_if<std::is_same<T, string_view_type>::value && std::is_same<typename std::decay<DefaultT>::type, string_view_type>::value>::type* = nullptr>
+	T get(DefaultT&& in_default_value) const {
+		const string_type* result = std::get_if<string_type>(&m_value);
+		if (result != nullptr) {
+			return T{ *result };
+		}
+
+		return in_default_value;
 	}
 
 	/** arrays */
