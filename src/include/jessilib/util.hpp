@@ -20,13 +20,24 @@
 
 #include <cstddef>
 #include <charconv>
+#include <string>
 
 /** Macros */
 
-#define JESSILIB_FILENAME \
-	(::jessilib::impl::filename_from_string(__FILE__))
+#define JESSILIB_IMPL_TYPE_LITERAL(IN, ...) __VA_ARGS__ ## IN
+#define JESSILIB_TYPE_LITERAL(IN, ...) JESSILIB_IMPL_TYPE_LITERAL(IN, __VA_ARGS__)
+
+#define JESSILIB_FILENAME(...) \
+	(::jessilib::impl::filename_from_string(JESSILIB_TYPE_LITERAL(__FILE__, __VA_ARGS__)))
+
+#define JESSILIB_FILENAME_VIEW(...) (::jessilib::make_string_view(JESSILIB_FILENAME(__VA_ARGS__)))
 
 namespace jessilib {
+
+template<typename CharT>
+std::basic_string_view<CharT> make_string_view(const CharT* in_ntstring) {
+	return in_ntstring;
+}
 
 template<typename CharT, typename NumberT>
 const CharT* parse_decimal_part(const CharT* in_str, const CharT* in_str_end, NumberT& out_value) {
@@ -129,23 +140,98 @@ constexpr T square(T in_value) {
 	return in_value * in_value;
 }
 
-/** Implementation details */
+template<typename IntegerT>
+constexpr IntegerT byteswap(IntegerT in_integer) { // TODO: Remove w/ C++23
+	static_assert(sizeof(IntegerT) > 1, "byteswap on single byte does nothing");
 
+	if constexpr (sizeof(IntegerT) == 2) {
+		return (in_integer << 8) | (in_integer >> 8);
+	}
+	else if constexpr (sizeof(IntegerT) == 4) {
+		return (in_integer << 24)
+			| ((in_integer & 0xFF00) << 8)
+			| ((in_integer & 0xFF0000) >> 8)
+			| (in_integer >> 24);
+	}
+	else if constexpr (sizeof(IntegerT) == 8) {
+		return (in_integer << 56)
+			| ((in_integer & 0xFF00) << 40)
+			| ((in_integer & 0xFF0000) << 24)
+			| ((in_integer & 0xFF000000) << 8)
+			| ((in_integer & 0xFF00000000) >> 8)
+			| ((in_integer & 0xFF0000000000) >> 24)
+			| ((in_integer & 0xFF000000000000) >> 40)
+			| (in_integer >> 56);
+	}
+	else {
+		// Fallback to std::reverse for exotic integer types
+		std::reverse(reinterpret_cast<unsigned char*>(&in_integer),
+			reinterpret_cast<unsigned char*>(&in_integer) + sizeof(IntegerT));
+		return in_integer;
+	}
+}
+
+template<typename CharT>
+void array_byteswap(CharT* begin, CharT* end) {
+	while (begin != end) {
+		*begin = byteswap(*begin);
+		++begin;
+	}
+}
+
+template<typename CharT>
+void string_byteswap(std::string& in_string) {
+	// Ensure correct number of bytes for underlying representation type
+	if (in_string.size() % sizeof(CharT) != 0) {
+		return;
+	}
+
+	for (auto itr = in_string.begin(); itr != in_string.end();) {
+		auto unit_end = itr + sizeof(CharT);
+		std::reverse(itr, unit_end);
+		itr = unit_end;
+	}
+}
+
+/** Implementation details */
 
 namespace impl {
 
-template<size_t in_filename_length>
-constexpr const char* filename_from_string(const char (&in_filename)[in_filename_length]) {
-	const char* filename_itr = in_filename;
-	const char* filename_end = filename_itr + in_filename_length;
-	const char* result = filename_itr;
+template<typename CharT, size_t in_filename_length>
+constexpr const CharT* filename_from_string(const CharT (&in_filename)[in_filename_length]) {
+	const CharT* filename_itr = in_filename;
+	const CharT* filename_end = filename_itr + in_filename_length;
+	const CharT* result = filename_itr;
 
 	while (filename_itr != filename_end) {
-		if (*filename_itr == '/' || *filename_itr == '\\') {
+		if (*filename_itr == U'/' || *filename_itr == U'\\') {
 			++filename_itr;
 			result = filename_itr;
 		}
 		else {
+			++filename_itr;
+		}
+	}
+
+	return result;
+}
+
+template<typename CharT, size_t in_filename_length>
+constexpr const CharT* file_extension_from_string(const CharT (&in_filename)[in_filename_length]) {
+	const CharT* filename_itr = in_filename;
+	const CharT* filename_end = filename_itr + in_filename_length;
+	const CharT* result = filename_end;
+
+	while (filename_itr != filename_end) {
+		if (*filename_itr == U'/' || *filename_itr == U'\\') {
+			++filename_itr;
+			result = filename_end;
+		}
+		else {
+			if (*filename_itr == '.') {
+				result = filename_itr;
+			}
+
 			++filename_itr;
 		}
 	}

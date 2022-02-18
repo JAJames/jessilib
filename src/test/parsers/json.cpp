@@ -137,12 +137,12 @@ TEST(JsonParser, deserialize_string) {
 	std::u16string_view u16text = uR"json("text")json"sv;
 	EXPECT_TRUE(deserialize_json(obj, u16text));
 	EXPECT_EQ(obj, u8"text"sv);
-	EXPECT_TRUE(u8text.empty());
+	EXPECT_TRUE(u16text.empty());
 
 	std::u32string_view u32text = UR"json("text")json"sv;
 	EXPECT_TRUE(deserialize_json(obj, u32text));
 	EXPECT_EQ(obj, u8"text"sv);
-	EXPECT_TRUE(u8text.empty());
+	EXPECT_TRUE(u32text.empty());
 }
 
 TEST(JsonParser, deserialize_array) {
@@ -272,4 +272,51 @@ TEST(JsonParser, deserialize_map_nested) {
 	EXPECT_EQ(obj[u8"some_other_object"][u8"beans"][u8"fruit"], true);
 	EXPECT_EQ(obj[u8"some_other_object"][u8"beans"][u8"magical"], true);
 	EXPECT_EQ(obj[u8"some_other_object"][u8"beans"][u8"makes toot"], true);
+}
+
+/** Some basic foreign-encoding tests */
+
+template<typename CharT>
+std::string make_foreign_string(std::basic_string_view<CharT> in_string) {
+	std::string result{ reinterpret_cast<const char*>(in_string.data()),
+		reinterpret_cast<const char*>(in_string.data() + in_string.size()) };
+	jessilib::string_byteswap<CharT>(result);
+
+	return result;
+}
+
+TEST(JsonParser, deserialize_fu16_string) {
+	json_parser parser;
+	std::string fu16text = make_foreign_string(uR"json("text")json"sv);
+
+	// Deserialize foreign utf-16 text
+	object obj = parser.deserialize_bytes(fu16text, text_encoding::utf_16_foreign);
+	EXPECT_EQ(obj, u8"text"sv);
+}
+
+TEST(JsonParser, deserialize_fu32_string) {
+	json_parser parser;
+	std::string fu32text = make_foreign_string(UR"json("text")json"sv);
+
+	// Deserialize foreign utf-16 text
+	object obj = parser.deserialize_bytes(fu32text, text_encoding::utf_32_foreign);
+	EXPECT_EQ(obj, u8"text"sv);
+}
+
+TEST(JsonParser, serialize_fu16_string) {
+	json_parser parser;
+	std::string fu16text = make_foreign_string(uR"json("\"text\"")json"sv);
+
+	// Deserialize foreign utf-16 text
+	std::string serialized_bytes = parser.serialize_bytes(u8R"json("text")json"sv, text_encoding::utf_16_foreign);
+	EXPECT_EQ(serialized_bytes, fu16text);
+}
+
+TEST(JsonParser, serialize_fu32_string) {
+	json_parser parser;
+	std::string fu32text = make_foreign_string(UR"json("\"text\"")json"sv);
+
+	// Deserialize foreign utf-16 text
+	std::string serialized_bytes = parser.serialize_bytes(u8R"json("text")json"sv, text_encoding::utf_32_foreign);
+	EXPECT_EQ(serialized_bytes, fu32text);
 }

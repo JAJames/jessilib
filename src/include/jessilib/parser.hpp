@@ -28,7 +28,7 @@ namespace jessilib {
 class parser {
 public:
 	virtual ~parser() = default;
-	using byte_type = uint8_t;
+	using byte_type = char;
 	using bytes_view_type = std::basic_string_view<byte_type>;
 
 	/** Interface methods */
