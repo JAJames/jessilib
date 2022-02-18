@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <limits>
 #include "unicode.hpp"
 
 namespace jessilib {
