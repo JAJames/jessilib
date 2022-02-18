@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
 
 	if (parameters.has_switch(u8"echoParameters")) {
 		// TODO: Write pretty JSON serializer based on JSON serializer
-		std::cout << std::endl << jessilib::json_parser{}.serialize(parameters) << std::endl;
+		std::wcout << std::endl << jessilib::json_parser{}.serialize<wchar_t>(parameters) << std::endl;
 	}
 
 	jessibot::io::console_input_loop();
