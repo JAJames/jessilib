@@ -19,6 +19,7 @@
 #include "jessilib/unicode.hpp"
 #include <fstream>
 #include <charconv>
+#include <algorithm>
 #include "jessilib/split.hpp"
 #include "test.hpp"
 
@@ -466,7 +467,7 @@ std::vector<folding_set> folding_sets_from_folding_info(const std::vector<foldin
 	std::vector<folding_set> result;
 
 	folding_set current{};
-	uint32_t last_match;
+	uint32_t last_match{};
 	for (auto& info : in_info) {
 		int64_t diff = static_cast<int64_t>(info.out_codepoint) - static_cast<int64_t>(info.in_codepoint);
 

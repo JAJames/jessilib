@@ -21,6 +21,8 @@
 #include <cstddef>
 #include <charconv>
 #include <string>
+#include <algorithm>
+#include <bit>
 
 /** Macros */
 
@@ -140,6 +142,10 @@ constexpr T square(T in_value) {
 	return in_value * in_value;
 }
 
+#ifdef __cpp_lib_byteswap
+using std::byteswap;
+#else
+
 template<typename IntegerT>
 constexpr IntegerT byteswap(IntegerT in_integer) { // TODO: Remove w/ C++23
 	static_assert(sizeof(IntegerT) > 1, "byteswap on single byte does nothing");
@@ -170,6 +176,8 @@ constexpr IntegerT byteswap(IntegerT in_integer) { // TODO: Remove w/ C++23
 		return in_integer;
 	}
 }
+
+#endif // __cpp_lib_byteswap
 
 template<typename CharT>
 void array_byteswap(CharT* begin, CharT* end) {

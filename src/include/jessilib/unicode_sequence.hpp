@@ -26,6 +26,7 @@
 #pragma once
 
 #include "unicode_base.hpp"
+#include <algorithm>
 
 namespace jessilib {
 

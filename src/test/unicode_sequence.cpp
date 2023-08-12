@@ -25,13 +25,13 @@ using namespace std::literals;
 
 // Compile-time tests for constexpr on compilers which support C++20 constexpr std::string
 #if defined(__cpp_lib_constexpr_string) && (__GNUC__ >= 12 || _MSC_VER >= 1929)
-constexpr std::string cpp_constexpr(std::string_view in_expression) {
-	std::string result{ static_cast<std::string>(in_expression) };
+constexpr std::u8string cpp_constexpr(std::u8string_view in_expression) {
+	std::u8string result{ static_cast<std::u8string>(in_expression) };
 	jessilib::apply_cpp_escape_sequences(result);
 	return result;
 }
-ASSERT_COMPILES_CONSTEXPR(return cpp_constexpr("test"s) == "test"s);
-ASSERT_COMPILES_CONSTEXPR(return cpp_constexpr("\\r\\n"s) == "\r\n"s);
+ASSERT_COMPILES_CONSTEXPR(return cpp_constexpr(u8"test"s) == u8"test"s);
+ASSERT_COMPILES_CONSTEXPR(return cpp_constexpr(u8"\\r\\n"s) == u8"\r\n"s);
 #endif // __cpp_lib_constexpr_string
 
 #ifdef JESSILIB_CHAR_AS_UTF8
